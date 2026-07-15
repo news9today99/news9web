@@ -205,6 +205,9 @@ def news_out(d):
         "tags": d.get("tags", []),
         "created_at": d["created_at"], "author": d.get("author", "News 9 Today"),
         "body_font": d.get("body_font"),
+        "region": d.get("region", "national"),
+        "source": d.get("source"),
+        "views": d.get("views", 0),
     }
 
 def cat_out(d):
@@ -379,19 +382,20 @@ REGIONS = [
     {"slug": "telangana", "name_en": "Telangana", "name_te": "తెలంగాణ",
      "bbox": [15.83, 77.28, 19.92, 81.79]},
     {"slug": "andhra_pradesh", "name_en": "Andhra Pradesh", "name_te": "ఆంధ్ర ప్రదేశ్",
-     "bbox": [12.62, 76.75, 19.13, 84.75]},
+     "bbox": [12.62, 78.5, 19.0, 84.75]},
     {"slug": "karnataka", "name_en": "Karnataka", "name_te": "కర్ణాటక",
-     "bbox": [11.6, 74.05, 18.45, 78.6]},
+     "bbox": [11.6, 74.05, 18.45, 78.5]},
     {"slug": "tamil_nadu", "name_en": "Tamil Nadu", "name_te": "తమిళనాడు",
-     "bbox": [8.08, 76.23, 13.35, 80.35]},
+     "bbox": [8.08, 78.5, 13.5, 80.35]},
 ]
 
 async def get_setting(key):
     doc = await db.settings.find_one({"key": key})
+    base = DEFAULT_SETTINGS.get(key, {})
     if not doc:
-        default = DEFAULT_SETTINGS.get(key, {})
-        return dict(default) if default else None
-    return {k: v for k, v in doc.items() if k not in ("_id", "key")}
+        return dict(base) if base else None
+    merged = {**base, **{k: v for k, v in doc.items() if k not in ("_id", "key")}}
+    return merged
 
 async def set_setting(key, data):
     doc = dict(data); doc["key"] = key
@@ -446,10 +450,18 @@ async def list_regions(): return REGIONS
 # ---- Reverse geo to region ----
 @api_router.get("/geo/detect-region")
 async def detect_region(lat: float, lon: float):
+    # Best-fit: pick the smallest matching bbox (most specific region)
+    best = None
+    best_area = float("inf")
     for r in REGIONS:
         bb = r.get("bbox")
         if bb and bb[0] <= lat <= bb[2] and bb[1] <= lon <= bb[3]:
-            return {"region": r["slug"], "name_te": r["name_te"], "name_en": r["name_en"]}
+            area = (bb[2] - bb[0]) * (bb[3] - bb[1])
+            if area < best_area:
+                best = r
+                best_area = area
+    if best:
+        return {"region": best["slug"], "name_te": best["name_te"], "name_en": best["name_en"]}
     return {"region": "national", "name_te": "జాతీయ", "name_en": "National"}
 
 # ---- YouTube auto-import ----

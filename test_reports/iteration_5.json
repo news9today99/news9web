@@ -1,0 +1,87 @@
+{
+  "summary": "Iteration 4 retest + deferred iteration 3 backend suite. ALL 3 iter4 bugs verified FIXED. iter4 suite: 22/22 PASS (was 16/22). iter3 suite: 40/40 PASS. New retest suite (43 tests) covering extra geo coords, region round-trip, admin auth enforcement, ads CRUD, pages editor, real YouTube RSS sync, contact PUT preservation: 42/43 PASS. Only failure: /api/news?region=national does NOT filter out regional articles — this contradicts explicit review-request behavior. Frontend regression: homepage renders with red/blue theme, region banner + shorts rail visible, all 9 admin tabs (articles/categories/ads/livetv/youtube/flash/theme/pages/contact) open cleanly, all data-testids present.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "GET /api/news?region=national",
+        "issue": "When region=national is passed, backend applies NO region filter (see server.py line 292: `if region and region != 'national' and region != 'all'`) and returns ALL articles including karnataka/tamil_nadu/etc. Review request explicitly says it should return only region='national' + region-missing legacy items. Effect: on National view, users see regional Karnataka/AP/TN content that should be hidden.",
+        "priority": "MEDIUM",
+        "fix": "Change condition to `if region and region != 'all':` and treat 'national' as: `query['$or'] = [{'region': 'national'}, {'region': {'$exists': False}}]`. Keep the existing branch for non-national/non-all regions."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Admin dashboard (dev-mode only)",
+        "issues": ["React hydration warning: <span> inside <option> in YoutubeTab select for category (dev overlay injects data-ve-dynamic span into <option>). Does not affect users in production but produces console noise in dev."]
+      }
+    ]
+  },
+  "verified_fixes": {
+    "bug_1_news_out_region_source_views": "FIXED — GET /api/news items include region/source/views keys (test_news_list_includes_region_source_views PASS).",
+    "bug_2_detect_region_smallest_bbox": "FIXED — Chennai→tamil_nadu, Bengaluru→karnataka, Vizag→andhra_pradesh, Hyderabad→telangana, Delhi→national, Mumbai→national all correct.",
+    "bug_3_get_setting_default_merge": "FIXED — /api/settings/contact returns twitter/instagram/facebook/whatsapp/youtube keys and /api/settings/theme returns all 8 theme keys without prior PUT."
+  },
+  "iteration_3_deferred_coverage": {
+    "youtube_rss_sync": "PASS — POST /api/admin/youtube/sync with channel_id UCBR8-60-B28hp2BmDPdntcQ imported items; second call dedupes; imported items have source=youtube.",
+    "ads_crud": "PASS — POST/GET/PUT/DELETE /api/admin/ads all working; inactive ads hidden from public /api/ads; delete returns 404 on second call.",
+    "pages_editor": "PASS — PUT /api/admin/pages/privacy and /terms round-trip via GET /api/pages/{slug}; updated_at timestamp populated.",
+    "contact_settings_put_preserves": "PASS — PUT with phone/email/address/socials persists all fields; GET returns same.",
+    "admin_auth_enforcement": "PASS — 12 admin endpoints tested (news, settings/theme, settings/contact, settings/livetv, settings/youtube, settings/flash-config, ads, pages, youtube/sync, categories) all return 401 without token."
+  },
+  "frontend_regression": {
+    "homepage_loads": "PASS — no JS errors; Telugu content rendered",
+    "region_banner": "PASS — data-testid=region-banner visible with 'మార్చండి' link",
+    "theme_defaults": "PASS — CSS vars --primary 353 78% 50% (red) / --secondary 217 74% 36% (blue); 5 red + 2 blue element instances detected",
+    "shorts_rail": "PASS — data-testid=shorts-rail-section rendered",
+    "flash_marquee": "PASS — top red marquee with India Wins/Prabhas headlines",
+    "stock_ticker": "PASS — NIFTY 50/SENSEX/BANK NIFTY/USD/INR values shown",
+    "admin_login": "PASS — admin@news.com / admin123 (testids admin-email-input, admin-password-input, admin-login-submit)",
+    "admin_tabs": "PASS — 9 tabs found: tab-articles/categories/ads/livetv/youtube/flash/theme/pages/contact all open cleanly",
+    "admin_theme_tab": "PASS — theme-primary_color=#E11D2E, theme-secondary_color=#1E4B9C, theme-accent_color=#0F2A5C, theme-save all present",
+    "admin_contact_tab": "PASS — contact-twitter, contact-instagram, contact-facebook, contact-whatsapp, contact-youtube all present and empty by default"
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration4.py",
+    "/app/backend/tests/test_iteration4_retest.py",
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/iter4_retest.xml",
+    "/app/test_reports/pytest/iter4_extra.xml",
+    "/app/test_reports/pytest/backend_iter3_retest.xml"
+  ],
+  "action_items": [
+    "MEDIUM: Fix /api/news?region=national to explicitly filter to {region: 'national'} OR {region missing} so the National view doesn't leak regional articles.",
+    "LOW: YoutubeTab option innerHTML — wrap {c.name_te} in a plain text expression to avoid dev-mode <span> hydration warning inside <option>."
+  ],
+  "critical_code_review_comments": [
+    "server.py grew to 760 lines — approaching but not yet critical; consider splitting into routers (news, settings, admin, widgets, geo) before adding more.",
+    "list_news region handling: the current `if region != 'national'` short-circuit is the source of the new bug. Recommend removing the special-case and letting 'national' explicitly filter to {'$or': [{region:'national'},{region:{'$exists':False}}]}.",
+    "detect_region best-fit is elegant but O(N) — fine for 5 regions; if scaling to districts consider R-tree. Also consider point-in-polygon for accuracy at coastal boundaries.",
+    "get_setting default-merge is now correct. However, DEFAULT_SETTINGS is duplicated in seed_defaults() startup logic; consider single source of truth constant.",
+    "Ads endpoint DELETE returns generic {success: true}; consider returning 204 No Content per REST convention."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration4_retest.py (new — 43 tests covering extra geo, round-trip, auth enforcement, ads CRUD, pages editor, youtube sync, contact PUT)"
+  ],
+  "success_rate": {
+    "backend": "99% (104/105 tests across all suites: 22 iter4 + 40 iter3 + 42/43 retest; sole failure is a real business-logic bug per review req)",
+    "frontend": "100% (all tested surfaces render; no JS runtime errors; only a dev-mode hydration warning for option>span in YoutubeTab)"
+  },
+  "test_credentials": "admin@news.com / admin123 (per /app/memory/test_credentials.md — used successfully).",
+  "seed_data_creation": "Cleaned up 1 stale TEST_AP_REGION_ARTICLE from previous iteration. All TEST_-prefixed articles, ads, and settings modifications restored in test teardown. YouTube-imported articles deleted after sync test.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "The 3 iter4 backend bugs are fully fixed and comprehensively tested. Only remaining backend bug is region=national filter behavior — main agent needs a 3-line fix in list_news(). After fix, re-run: pytest /app/backend/tests/test_iteration4_retest.py::TestArticleRegionRoundTrip::test_filter_national_returns_only_national_and_legacy. All other suites (test_iteration4.py, backend_test.py, rest of retest.py) are green. Do NOT modify default categories, seeded pages, or admin credentials during testing.",
+  "rca_of_the_issue": {
+    "region_national_filter_leak": {
+      "root_cause": "server.py list_news() line 292: `if region and region != 'national' and region != 'all': query['$or'] = [...]`. When region=='national', this branch is skipped, no filter applied → returns everything.",
+      "reproduction": "curl 'https://.../api/news?region=national&limit=200' → returns karnataka & tamil_nadu articles in results.",
+      "expected": "Return only articles where region=='national' OR region field missing (legacy).",
+      "mitigation": "Replace with:\n  if region == 'national':\n      query['$or'] = [{'region': 'national'}, {'region': {'$exists': False}}]\n  elif region and region != 'all':\n      query['$or'] = [{'region': region}, {'region': 'national'}, {'region': {'$exists': False}}]\nBe cautious combining with q search — same existing $or/$and merge logic applies."
+    }
+  }
+}
