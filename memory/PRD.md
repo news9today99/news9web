@@ -1,63 +1,55 @@
 # ABN Andhra News Portal - PRD
 
 ## Problem Statement
-"create a website that when i upload news from backend in front end website all news should be visible video attachement sports section cinema section and photos all attachements attached one sample website image" (sample: ABN Andhra Jyothi Telugu news portal)
-
-## User Choices
-- Simple admin login (JWT + bcrypt)
-- Sample seed data + admin can add own news
-- Telugu content support (UTF-8, Noto Sans Telugu font)
-- Images (Emergent object storage) + YouTube embed URLs for video
-- English UI labels, Telugu-friendly typography
+Build a news portal (ABN Andhra Jyothi-inspired) where admin uploads news from backend and public site displays them with video attachments, sports, cinema, photos categories. Telugu support required.
 
 ## Architecture
-- **Backend**: FastAPI + Motor (async MongoDB), PyJWT, bcrypt, Emergent object storage integration
-- **Frontend**: React 19 + React Router 7 + Tailwind + Shadcn UI + react-fast-marquee + Sonner
-- **DB Collections**: `users`, `news`, `files`
-- **Fonts**: Playfair Display (headlines) + IBM Plex Sans (body) + Noto Sans Telugu
-- **Design**: Editorial newspaper aesthetic — bold red (#DC2626) accents, deep blue (#1E3A8A) nav, off-white paper background, sharp corners
+- **Backend**: FastAPI + Motor (async MongoDB), PyJWT, bcrypt, Emergent object storage, hls.js (frontend)
+- **Frontend**: React 19 + React Router 7 + Tailwind + Shadcn UI + react-fast-marquee + Sonner + DOMPurify
+- **DB Collections**: `users`, `news`, `files`, `categories`, `settings`
+- **Fonts**: Playfair Display + IBM Plex Sans + Noto Sans Telugu
+- **Design**: Editorial newspaper — red (#DC2626) + blue (#1E3A8A) + off-white paper
 
-## User Personas
-1. **Reader** — visits home, browses categories, reads articles, watches embedded videos
-2. **Admin (Editor)** — logs in, creates/edits/deletes news, uploads cover images, sets featured/published flags
+## Implemented
 
-## Core Requirements
-- Multi-category news portal (Politics, Sports, Cinema, Business, Technology, Health, Photos, Videos)
-- Rich article page with hero image + optional YouTube video + Telugu-friendly body
-- Admin CRUD with image upload (Emergent object storage) and YouTube URL support
-- Flash news marquee, Live TV widget, trending sidebar
+### Iteration 1 (2026-02-15)
+- JWT admin auth + bcrypt
+- News CRUD, categories, image upload (Emergent object storage)
+- Editorial homepage, article page, admin dashboard with 12 seeded articles
+- Test result: 15/15 passed
 
-## Implemented (2026-02-15)
-- Backend
-  - JWT login/logout/me (`/api/auth/*`)
-  - News CRUD (`/api/news`, `/api/admin/news`) with category/featured filters
-  - Image upload + serve (`/api/admin/upload`, `/api/files/{path}`) via Emergent object storage
-  - 12 sample seed articles across all categories
-  - Admin seeded (admin@news.com / admin123)
-- Frontend
-  - Home page: flash marquee, hero + side stories, latest grid, Live TV iframe, trending sidebar, per-category sections
-  - Category listing page
-  - Article detail with related sidebar
-  - Admin login + dashboard with modal-based create/edit form
-  - Image upload button with preview
-  - Featured/Published toggles
+### Iteration 2 (2026-02-15)
+- **Full Telugu UI**: All nav labels, buttons, form labels, dashboard, footer in Telugu (via lib/i18n.js)
+- **Admin category management**: Add/edit/delete categories with English + Telugu names + display order; blocked if articles exist
+- **Live TV admin control**: URL + stream type (YouTube / HLS / MP4) + channel titles; hls.js integrated for .m3u8 streams
+- **Flash news toggle**: Per-article `is_flash` flag controls what appears in the top marquee (admin picks)
+- **Search bar**: Header search icon + /search?q= page with full-text query across title/summary/body
+- **Category pagination**: 12/page with Previous/Next controls
+- **Rich-text editor**: Bold/Italic/Heading/Quote/List/Link/Undo/Redo (contenteditable + DOMPurify sanitization on render)
+- **Multi-image galleries**: Multiple images per article + lightbox viewer
+- **Social share buttons**: Twitter, Facebook, WhatsApp + native share + copy-link
+- Test result: 21/21 backend + all frontend flows passed
 
-## Test Results (Iteration 1)
-- Backend: 100%
-- Frontend: 100%
-- 15/15 tests passed. Full E2E admin CRUD -> public visibility validated with Telugu text.
+## Test Credentials
+Admin: `admin@news.com` / `admin123`
 
-## Backlog (P1)
-- Search functionality
-- Pagination on category pages
-- Article view counts + comments
-- Newsletter subscription backend
-- Rich text editor for admin (currently plain textarea)
-- Multiple image gallery for photos category
+## Backlog
 
-## Backlog (P2)
-- Multi-admin user management
+### P1
+- Rich-text editor: add image insertion inline
+- Article view counts + author bio
+- Improved SEO (meta tags, OpenGraph) — currently minimal
+- Live TV: reset-to-default button + multi-channel picker
+
+### P2
+- Comments system (anonymous or Emergent Google Auth)
 - Push notifications for breaking news
-- SEO meta tags per article
-- Social sharing buttons
-- Related article ML tagging
+- RSS feed
+- Newsletter backend (currently UI-only)
+- Multi-admin user management + roles
+- Automatic translation (English ↔ Telugu) via LLM
+
+## Recent Notes
+- Existing 12 seed articles have plain-text bodies (pre-rich-editor). New articles use HTML.
+- Flash news marquee reads `is_flash=true` items; migrated 5 featured items to also be flash.
+- RTMP streams don't work directly in browsers — admin must convert to HLS (help text shown).

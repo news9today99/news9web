@@ -30,7 +30,7 @@ export default function Category() {
   }, [slug, page]);
 
   const cat = cats.find(c => c.slug === slug);
-  const catName = cat?.name_te || slug;
+  const catName = cat?.name_te || (cats.length === 0 ? "" : slug);
   const catLabel = catName;
 
   const items = data.items;
