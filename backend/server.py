@@ -116,12 +116,6 @@ class CategoryUpdate(BaseModel):
     name_te: Optional[str] = None
     order: Optional[int] = None
 
-class LiveTVUpdate(BaseModel):
-    url: str
-    stream_type: str
-    title_en: Optional[str] = "News 9 Today"
-    title_te: Optional[str] = "న్యూస్ 9 టుడే"
-
 class ContactUpdate(BaseModel):
     phone: str
     email: str
@@ -141,6 +135,24 @@ class ThemeUpdate(BaseModel):
     tagline_en: str = "Trusted Telugu News · 24×7"
     site_name_te: str = "న్యూస్ 9 టుడే"
     site_name_en: str = "News 9 Today"
+    font_scale: float = 1.0  # 0.85 – 1.35
+    default_language: str = "te"  # te | en | hi
+
+class LiveChannel(BaseModel):
+    id: Optional[str] = None
+    name_te: str
+    name_en: str
+    url: str
+    stream_type: str = "youtube"
+    order: int = 100
+    is_active: bool = True
+
+class LiveTVUpdate(BaseModel):
+    url: str
+    stream_type: str
+    title_en: Optional[str] = "News 9 Today"
+    title_te: Optional[str] = "న్యూస్ 9 టుడే"
+    channels: Optional[List[LiveChannel]] = None
 
 class FlashConfigUpdate(BaseModel):
     category_slugs: List[str] = []  # empty = all categories
@@ -364,7 +376,12 @@ async def admin_list_news(user: dict = Depends(get_current_admin)):
 # ---- Generic Settings ----
 DEFAULT_SETTINGS = {
     "livetv": {"url": "https://www.youtube.com/embed/jfKfPfyJRdk", "stream_type": "youtube",
-               "title_en": "News 9 Today", "title_te": "న్యూస్ 9 టుడే"},
+               "title_en": "News 9 Today", "title_te": "న్యూస్ 9 టుడే",
+               "channels": [
+                   {"id": "ch1", "name_te": "న్యూస్ 9 మెయిన్", "name_en": "News 9 Main",
+                    "url": "https://www.youtube.com/embed/jfKfPfyJRdk", "stream_type": "youtube",
+                    "order": 10, "is_active": True},
+               ]},
     "contact": {"phone": "9393950505", "email": "news9today99@gmail.com",
                 "address": "Hyderabad, Telangana",
                 "twitter": "", "instagram": "", "facebook": "",
@@ -375,7 +392,8 @@ DEFAULT_SETTINGS = {
               "accent_color": "#0F2A5C", "logo_url": "/logo.png",
               "tagline_te": "నమ్మకమైన తెలుగు వార్తలు · 24×7",
               "tagline_en": "Trusted Telugu News · 24×7",
-              "site_name_te": "న్యూస్ 9 టుడే", "site_name_en": "News 9 Today"},
+              "site_name_te": "న్యూస్ 9 టుడే", "site_name_en": "News 9 Today",
+              "font_scale": 1.0, "default_language": "te"},
     "flash_config": {"category_slugs": [], "use_featured_only": False},
 }
 
@@ -414,7 +432,13 @@ async def get_youtube_setting(): return await get_setting("youtube")
 
 @api_router.put("/admin/settings/livetv")
 async def set_livetv(payload: LiveTVUpdate, user: dict = Depends(get_current_admin)):
-    await set_setting("livetv", payload.model_dump())
+    data = payload.model_dump(exclude_none=True)
+    # Assign IDs to any new channels lacking one
+    if "channels" in data and data["channels"]:
+        for ch in data["channels"]:
+            if not ch.get("id"):
+                ch["id"] = str(uuid.uuid4())
+    await set_setting("livetv", data)
     return await get_setting("livetv")
 
 @api_router.put("/admin/settings/contact")

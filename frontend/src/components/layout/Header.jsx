@@ -1,10 +1,11 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { Search, Radio, Menu, X, Phone, Mail } from "lucide-react";
+import { Search, Radio, Menu, X, Phone, Mail, Globe } from "lucide-react";
 import Marquee from "react-fast-marquee";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { T } from "@/lib/i18n";
+import { T, catName } from "@/lib/i18n";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import SocialLinks from "@/components/social/SocialLinks";
 
 export default function Header({ flash = [] }) {
@@ -14,6 +15,7 @@ export default function Header({ flash = [] }) {
   const [cats, setCats] = useState([]);
   const [contact, setContact] = useState(null);
   const { theme } = useTheme();
+  const { lang, setLanguage, languages } = useLanguage();
   const nav = useNavigate();
 
   useEffect(() => {
@@ -49,6 +51,13 @@ export default function Header({ flash = [] }) {
               <SocialLinks variant="header" />
             </div>
             <div className="flex items-center gap-4">
+              <select value={lang} onChange={(e) => setLanguage(e.target.value)}
+                data-testid="language-switcher"
+                className="bg-transparent border border-slate-600 text-white text-xs px-2 py-0.5 focus:outline-none focus:border-brand-red cursor-pointer">
+                {languages.map(l => (
+                  <option key={l.code} value={l.code} className="text-black">{l.label}</option>
+                ))}
+              </select>
               <Link to="/privacy" className="hover:text-brand-red transition-colors">{T.privacy}</Link>
               <Link to="/terms" className="hover:text-brand-red transition-colors">{T.terms}</Link>
             </div>
@@ -162,7 +171,7 @@ export default function Header({ flash = [] }) {
                   `px-4 py-3 cat-tag whitespace-nowrap transition-colors ${isActive ? "bg-brand-red" : "hover:bg-brand-blue-dark"}`
                 }
               >
-                {c.name_te}
+                {catName(c)}
               </NavLink>
             ))}
             <NavLink to="/live" data-testid="nav-live-link"
@@ -182,7 +191,7 @@ export default function Header({ flash = [] }) {
               <NavLink to="/live" onClick={() => setMobileOpen(false)} className="px-4 py-2 cat-tag bg-brand-red">🔴 {T.liveTv}</NavLink>
               {cats.map((c) => (
                 <NavLink key={c.slug} to={`/category/${c.slug}`} onClick={() => setMobileOpen(false)} className="px-4 py-2 cat-tag">
-                  {c.name_te}
+                  {catName(c)}
                 </NavLink>
               ))}
               <Link to="/admin/login" onClick={() => setMobileOpen(false)} className="px-4 py-2 cat-tag">{T.admin}</Link>

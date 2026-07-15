@@ -83,6 +83,37 @@ export default function ThemeTab() {
         {field("site_name_te", "సైట్ పేరు (తెలుగు)")}
         {field("tagline_en", "ట్యాగ్‌లైన్ (ఇంగ్లీష్)")}
         {field("tagline_te", "ట్యాగ్‌లైన్ (తెలుగు)")}
+
+        {/* Font scale */}
+        <div>
+          <label className="cat-tag block mb-1">{T.fontSize} ({Math.round((form.font_scale || 1) * 100)}%)</label>
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={() => setForm({...form, font_scale: Math.max(0.7, (form.font_scale || 1) - 0.05)})}
+              data-testid="theme-fontscale-dec"
+              className="w-8 h-8 border border-[#E2E8F0] hover:bg-slate-100">A-</button>
+            <input type="range" min="0.7" max="1.5" step="0.05"
+              value={form.font_scale || 1.0}
+              onChange={e => setForm({...form, font_scale: parseFloat(e.target.value)})}
+              data-testid="theme-font_scale"
+              className="flex-1"/>
+            <button type="button" onClick={() => setForm({...form, font_scale: Math.min(1.5, (form.font_scale || 1) + 0.05)})}
+              data-testid="theme-fontscale-inc"
+              className="w-8 h-8 border border-[#E2E8F0] hover:bg-slate-100">A+</button>
+          </div>
+        </div>
+
+        {/* Default language */}
+        <div>
+          <label className="cat-tag block mb-1">{T.language}</label>
+          <select value={form.default_language || "te"} onChange={e => setForm({...form, default_language: e.target.value})}
+            data-testid="theme-default_language"
+            className="w-full px-3 py-2 border border-[#E2E8F0] bg-white">
+            <option value="te">తెలుగు (Telugu)</option>
+            <option value="en">English</option>
+            <option value="hi">हिंदी (Hindi)</option>
+          </select>
+        </div>
+
         <button type="submit" disabled={saving} data-testid="theme-save"
           className="bg-brand-red hover:bg-brand-red text-white px-4 py-2 cat-tag flex items-center gap-2">
           <Save className="w-4 h-4"/> {saving ? T.uploading : T.save}

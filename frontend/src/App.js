@@ -4,6 +4,7 @@ import "@/App.css";
 import { Toaster } from "sonner";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import Home from "@/pages/Home";
@@ -53,23 +54,25 @@ function Layout({ children }) {
 function App() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <BrowserRouter>
-          <ScrollToTop />
-          <Toaster position="top-right" richColors />
-          <Routes>
-            <Route path="/admin/login" element={<Layout><AdminLogin /></Layout>} />
-            <Route path="/admin" element={<Layout><AdminDashboard /></Layout>} />
-            <Route path="/" element={<Layout><Home /></Layout>} />
-            <Route path="/category/:slug" element={<Layout><Category /></Layout>} />
-            <Route path="/article/:id" element={<Layout><Article /></Layout>} />
-            <Route path="/search" element={<Layout><Search /></Layout>} />
-            <Route path="/live" element={<Layout><LivePage /></Layout>} />
-            <Route path="/privacy" element={<Layout><StaticPage /></Layout>} />
-            <Route path="/terms" element={<Layout><StaticPage /></Layout>} />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <ScrollToTop />
+            <Toaster position="top-right" richColors />
+            <Routes>
+              <Route path="/admin/login" element={<Layout><AdminLogin /></Layout>} />
+              <Route path="/admin" element={<Layout><AdminDashboard /></Layout>} />
+              <Route path="/" element={<Layout><Home /></Layout>} />
+              <Route path="/category/:slug" element={<Layout><Category /></Layout>} />
+              <Route path="/article/:id" element={<Layout><Article /></Layout>} />
+              <Route path="/search" element={<Layout><Search /></Layout>} />
+              <Route path="/live" element={<Layout><LivePage /></Layout>} />
+              <Route path="/privacy" element={<Layout><StaticPage /></Layout>} />
+              <Route path="/terms" element={<Layout><StaticPage /></Layout>} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </LanguageProvider>
     </ThemeProvider>
   );
 }

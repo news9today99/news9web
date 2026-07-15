@@ -12,6 +12,8 @@ const DEFAULT_THEME = {
   tagline_en: "Trusted Telugu News · 24×7",
   site_name_te: "న్యూస్ 9 టుడే",
   site_name_en: "News 9 Today",
+  font_scale: 1.0,
+  default_language: "te",
 };
 
 export function ThemeProvider({ children }) {
@@ -29,12 +31,14 @@ export function ThemeProvider({ children }) {
   useEffect(() => {
     const style = document.getElementById("theme-vars") || document.createElement("style");
     style.id = "theme-vars";
+    const scale = Math.max(0.7, Math.min(1.5, parseFloat(theme.font_scale) || 1.0));
     style.innerHTML = `
       :root {
         --brand-red: ${theme.primary_color};
         --brand-blue: ${theme.secondary_color};
         --brand-blue-dark: ${theme.accent_color};
       }
+      html { font-size: ${16 * scale}px; }
       .bg-brand-red { background-color: ${theme.primary_color} !important; }
       .bg-brand-blue { background-color: ${theme.secondary_color} !important; }
       .bg-brand-blue-dark { background-color: ${theme.accent_color} !important; }

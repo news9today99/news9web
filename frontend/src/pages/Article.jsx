@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { api, resolveImageUrl, formatDate } from "@/lib/api";
 import { NewsCard } from "@/components/news/NewsCard";
-import { Share2, Clock, User, X } from "lucide-react";
+import { Share2, Clock, User, X, Eye } from "lucide-react";
 import DOMPurify from "dompurify";
 import { T } from "@/lib/i18n";
 import { toast } from "sonner";
@@ -96,6 +96,11 @@ export default function Article() {
           <div className="flex items-center gap-4 text-sm text-[#475569] border-y border-[#E2E8F0] py-3 mb-6 flex-wrap">
             <div className="flex items-center gap-1"><User className="w-4 h-4" /> {article.author}</div>
             <div className="flex items-center gap-1"><Clock className="w-4 h-4" /> {formatDate(article.created_at)}</div>
+            {typeof article.views === "number" && article.views > 0 && (
+              <div className="flex items-center gap-1" data-testid="article-views">
+                <Eye className="w-4 h-4" /> {article.views} {T.views}
+              </div>
+            )}
             <div className="ml-auto flex items-center gap-2">
               <button data-testid="share-btn" onClick={doShare} className="flex items-center gap-1 hover:text-[#DC2626] transition-colors">
                 <Share2 className="w-4 h-4" /> {T.share}

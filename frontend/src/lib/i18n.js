@@ -1,165 +1,37 @@
-export const T = {
-  // Header
-  home: "హోమ్",
-  liveTv: "లైవ్ టీవీ",
-  admin: "అడ్మిన్",
-  search: "వెతకండి",
-  searchPlaceholder: "వార్తలు వెతకండి...",
-  flashNews: "బ్రేకింగ్ న్యూస్",
-  breakingNews: "బ్రేకింగ్ న్యూస్",
-  siteTagline: "నమ్మకమైన తెలుగు వార్తలు · 24×7",
-  privacy: "గోప్యతా విధానం",
-  terms: "నిబంధనలు",
+import { dictionaries, LANGUAGES } from "./dictionaries";
 
-  // Home sections
-  latestNews: "తాజా వార్తలు",
-  trendingNow: "ట్రెండింగ్ ఇప్పుడు",
-  onAir: "ప్రసారంలో",
-  viewAll: "అన్నీ చూడండి →",
-  abnVideos: "న్యూస్ 9 వీడియోలు",
-  weather: "వాతావరణం",
-  stockMarket: "స్టాక్ మార్కెట్",
+const STORE_KEY = "n9t_lang";
+const DEFAULT_LANG = "te";
 
-  // Article
-  relatedStories: "సంబంధిత వార్తలు",
-  share: "షేర్",
-  articleNotFound: "వార్త దొరకలేదు",
-  backToHome: "← హోమ్‌కి తిరిగి వెళ్ళండి",
-  views: "వ్యూస్",
-
-  // Category page
-  category: "విభాగం",
-  stories: "వార్తలు",
-  noStoriesYet: "ఈ విభాగంలో వార్తలు లేవు.",
-  checkBackSoon: "త్వరలో మళ్ళీ చూడండి.",
-  previous: "మునుపటి",
-  next: "తర్వాత",
-  page: "పేజీ",
-  of: "లో",
-
-  // Search
-  searchResults: "శోధన ఫలితాలు",
-  noResults: "ఫలితాలు దొరకలేదు",
-  resultsFor: "కోసం ఫలితాలు",
-
-  // Admin login
-  adminPortal: "అడ్మిన్ పోర్టల్",
-  signInToPublish: "వార్తలు ప్రచురించడానికి సైన్ ఇన్ చేయండి",
-  email: "ఇమెయిల్",
-  password: "పాస్‌వర్డ్",
-  signIn: "సైన్ ఇన్",
-  signingIn: "సైన్ ఇన్ అవుతోంది…",
-
-  // Admin dashboard
-  newsroomDashboard: "న్యూస్ రూమ్ డాష్‌బోర్డ్",
-  newArticle: "కొత్త వార్త",
-  logout: "లాగ్ అవుట్",
-  signedInAs: "సైన్ ఇన్ అయినవారు",
-  articles: "వార్తలు",
-  categories: "విభాగాలు",
-  siteSettings: "సైట్ సెట్టింగ్‌లు",
-  ads: "ప్రకటనలు",
-  pages: "పేజీలు",
-  youtubeSync: "యూట్యూబ్ సింక్",
-  contactSettings: "కాంటాక్ట్ వివరాలు",
-  title: "శీర్షిక",
-  date: "తేదీ",
-  status: "స్థితి",
-  actions: "చర్యలు",
-  live: "లైవ్",
-  draft: "డ్రాఫ్ట్",
-  loading: "లోడ్ అవుతోంది…",
-  noArticlesYet: "ఇంకా వార్తలు లేవు. కొత్త వార్త క్లిక్ చేయండి.",
-
-  // Article form
-  editArticle: "వార్త సవరించండి",
-  createArticle: "కొత్త వార్త",
-  titleRequired: "శీర్షిక *",
-  summary: "సారాంశం",
-  categoryRequired: "విభాగం *",
-  tags: "ట్యాగ్‌లు (కామాతో వేరు చేయండి)",
-  body: "వార్త వివరాలు * (తెలుగు అనుమతి)",
-  bodyFont: "తెలుగు ఫాంట్",
-  coverImage: "కవర్ చిత్రం",
-  additionalImages: "అదనపు చిత్రాలు (ఫోటో గ్యాలరీ)",
-  pasteUrlOrUpload: "URL పేస్ట్ చేయండి లేదా అప్‌లోడ్ చేయండి…",
-  upload: "అప్‌లోడ్",
-  uploading: "అప్‌లోడ్ అవుతోంది…",
-  addImage: "చిత్రం జోడించండి",
-  remove: "తీసివేయండి",
-  youtubeEmbedUrl: "యూట్యూబ్ ఎంబెడ్ URL",
-  featured: "ఫీచర్డ్ (హీరో)",
-  flashNewsToggle: "బ్రేకింగ్ న్యూస్‌లో చూపించు",
-  published: "ప్రచురించబడింది",
-  update: "అప్‌డేట్",
-  publish: "ప్రచురించు",
-  cancel: "రద్దు చేయి",
-  confirmDelete: "ఈ వార్తను తొలగించాలా?",
-
-  // Category manager
-  addCategory: "విభాగం జోడించండి",
-  slug: "స్లగ్ (URL)",
-  nameEnglish: "పేరు (ఇంగ్లీష్)",
-  nameTelugu: "పేరు (తెలుగు)",
-  order: "క్రమం",
-  save: "సేవ్",
-  edit: "సవరించు",
-  delete: "తొలగించు",
-
-  // Live TV settings
-  liveTvSettings: "లైవ్ టీవీ సెట్టింగ్‌లు",
-  streamUrl: "స్ట్రీమ్ URL",
-  streamType: "స్ట్రీమ్ రకం",
-  streamTypeYoutube: "యూట్యూబ్",
-  streamTypeHls: "HLS (.m3u8)",
-  streamTypeMp4: "MP4 / నేరుగా వీడియో",
-  channelTitleEn: "చానెల్ పేరు (ఇంగ్లీష్)",
-  channelTitleTe: "చానెల్ పేరు (తెలుగు)",
-  saveSettings: "సెట్టింగ్‌లు సేవ్ చేయండి",
-  playLive: "లైవ్ ప్లే చేయండి",
-  liveTvHelp: "యూట్యూబ్: /embed/VIDEO_ID URL వాడండి. HLS: .m3u8 లింక్. RTMP నేరుగా వెబ్‌లో పని చేయదు — HLS గా మార్చాలి.",
-  latestNewsFeed: "తాజా వార్తల ఫీడ్",
-
-  // YouTube
-  channelId: "యూట్యూబ్ చానెల్ ID",
-  channelIdHelp: "మీ చానెల్ URL నుంచి channel ID కాపీ చేయండి (UC...తో మొదలవుతుంది)",
-  autoImport: "ఆటో ఇంపోర్ట్",
-  defaultCategory: "డిఫాల్ట్ విభాగం",
-  syncNow: "ఇప్పుడే సింక్ చేయండి",
-  syncing: "సింక్ అవుతోంది...",
-
-  // Ads
-  addAd: "ప్రకటన జోడించండి",
-  adName: "ప్రకటన పేరు",
-  placement: "స్థానం",
-  placementStrip: "టాప్ స్ట్రిప్",
-  placementImage: "సైడ్‌బార్ చిత్రం",
-  placementVideo: "వ్యాసంలో వీడియో",
-  placementSidebar: "సైడ్‌బార్",
-  linkUrl: "క్లిక్ లింక్ URL",
-  imageUrl: "చిత్రం URL",
-  videoUrl: "వీడియో URL",
-  active: "యాక్టివ్",
-
-  // Pages
-  privacyPolicy: "గోప్యతా విధానం",
-  termsConditions: "నిబంధనలు మరియు షరతులు",
-  editPrivacyPolicy: "గోప్యతా విధానం సవరించండి",
-  editTerms: "నిబంధనలు సవరించండి",
-
-  // Contact
-  phone: "ఫోన్",
-  address: "చిరునామా",
-
-  // Footer
-  footerTagline: "నమ్మకమైన తెలుగు వార్తలు. బ్రేకింగ్ న్యూస్, లోతైన విశ్లేషణ, ముఖ్యమైన కథనాలు.",
-  sections: "విభాగాలు",
-  more: "మరిన్ని",
-  newsletter: "వార్తాలేఖ",
-  newsletterDesc: "రోజువారీ ముఖ్య వార్తలు మీ ఇమెయిల్‌కి.",
-  yourEmail: "మీ ఇమెయిల్",
-  subscribe: "సబ్‌స్క్రయిబ్",
-  allRightsReserved: "© 2026 న్యూస్ 9 టుడే. అన్ని హక్కులు రిజర్వ్ చేయబడ్డాయి.",
-  editorialTrusted: "సంపాదకీయ · స్వతంత్ర · నమ్మకమైన",
-  contactUs: "సంప్రదింపులు",
+const state = {
+  lang: (typeof window !== "undefined" && localStorage.getItem(STORE_KEY)) || DEFAULT_LANG,
 };
+
+export function getLanguage() { return state.lang; }
+export function setLanguage(lang) {
+  if (!dictionaries[lang]) lang = DEFAULT_LANG;
+  state.lang = lang;
+  if (typeof window !== "undefined") {
+    localStorage.setItem(STORE_KEY, lang);
+    window.dispatchEvent(new CustomEvent("n9t-lang-change", { detail: lang }));
+  }
+}
+
+// Proxy so T.foo always reads current-language value.
+export const T = new Proxy({}, {
+  get(_, key) {
+    if (typeof key !== "string") return undefined;
+    const dict = dictionaries[state.lang] || dictionaries[DEFAULT_LANG];
+    return dict[key] ?? dictionaries[DEFAULT_LANG][key] ?? key;
+  }
+});
+
+// Helper for category name based on language
+export function catName(c) {
+  if (!c) return "";
+  const lang = state.lang;
+  if (lang === "en") return c.name_en || c.name_te || c.slug;
+  return c.name_te || c.name_en || c.slug;
+}
+
+export { LANGUAGES };

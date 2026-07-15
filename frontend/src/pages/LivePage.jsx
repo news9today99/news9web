@@ -3,12 +3,13 @@ import { Link } from "react-router-dom";
 import { api } from "@/lib/api";
 import LivePlayer from "@/components/livetv/LivePlayer";
 import { NewsCard } from "@/components/news/NewsCard";
-import { Radio, Clock } from "lucide-react";
-import { T } from "@/lib/i18n";
+import { Radio, Clock, Tv } from "lucide-react";
+import { T, catName } from "@/lib/i18n";
 import { formatDate } from "@/lib/api";
 
 export default function LivePage() {
   const [live, setLive] = useState(null);
+  const [activeChannel, setActiveChannel] = useState(null);
   const [news, setNews] = useState([]);
   const [cats, setCats] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,11 +23,14 @@ export default function LivePage() {
           api.get("/categories"),
         ]);
         setLive(l.data);
+        setActiveChannel({
+          url: l.data.url, stream_type: l.data.stream_type,
+          name_te: l.data.title_te, name_en: l.data.title_en,
+        });
         setNews(n.data.items || []);
         setCats(c.data);
       } finally { setLoading(false); }
     })();
-    // Refresh news feed every 60s (auto-update)
     const int = setInterval(async () => {
       try {
         const { data } = await api.get("/news?limit=30");
@@ -36,28 +40,29 @@ export default function LivePage() {
     return () => clearInterval(int);
   }, []);
 
-  const catName = (slug) => cats.find(c => c.slug === slug)?.name_te || slug;
+  const catLabel = (slug) => catName(cats.find(c => c.slug === slug));
 
   if (loading) return <div className="max-w-7xl mx-auto p-8">{T.loading}</div>;
 
+  const channels = (live?.channels || []).filter(c => c.is_active);
+
   return (
     <main className="min-h-screen" data-testid="live-page">
-      {/* Player section */}
       <section className="bg-brand-blue-dark text-white">
         <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-3 mb-4 flex-wrap">
             <div className="flex items-center gap-2 bg-brand-red px-3 py-1">
               <Radio className="w-4 h-4 animate-pulse" />
               <span className="cat-tag">{T.live}</span>
             </div>
             <h1 className="font-serif-editorial font-black text-2xl md:text-3xl">
-              {live?.title_te || T.liveTv}
+              {activeChannel?.name_te || activeChannel?.name_en || T.liveTv}
             </h1>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-9 bg-black">
-              {live && <LivePlayer url={live.url} streamType={live.stream_type}
-                                    titleTe={live.title_te} titleEn={live.title_en} />}
+              {activeChannel && <LivePlayer url={activeChannel.url} streamType={activeChannel.stream_type}
+                                             titleTe={activeChannel.name_te} titleEn={activeChannel.name_en} />}
             </div>
             <aside className="lg:col-span-3 space-y-2 max-h-[480px] overflow-y-auto pr-2" data-testid="live-side-feed">
               <div className="cat-tag text-brand-red border-b border-slate-700 pb-2">{T.trendingNow}</div>
@@ -69,7 +74,7 @@ export default function LivePage() {
                     <img src={n.image_url} alt={n.title} className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs text-brand-red cat-tag">{catName(n.category)}</div>
+                    <div className="text-xs text-brand-red cat-tag">{catLabel(n.category)}</div>
                     <div className="text-sm font-medium leading-snug line-clamp-2 group-hover:text-brand-red">{n.title}</div>
                     <div className="text-xs text-slate-400 flex items-center gap-1 mt-1">
                       <Clock className="w-3 h-3" /> {formatDate(n.created_at)}
@@ -79,18 +84,37 @@ export default function LivePage() {
               ))}
             </aside>
           </div>
+
+          {/* Channels picker */}
+          {channels.length > 1 && (
+            <div className="mt-4" data-testid="channel-picker">
+              <div className="cat-tag text-brand-red mb-2 flex items-center gap-2"><Tv className="w-4 h-4"/> {T.channels}</div>
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {channels.map((ch, i) => (
+                  <button key={ch.id || i} onClick={() => setActiveChannel(ch)}
+                    data-testid={`channel-btn-${i}`}
+                    className={`flex-shrink-0 px-4 py-2 cat-tag transition-colors border ${
+                      activeChannel?.url === ch.url
+                        ? "bg-brand-red text-white border-brand-red"
+                        : "border-slate-600 hover:bg-brand-blue"
+                    }`}>
+                    {ch.name_te || ch.name_en}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
-      {/* News feed under the player */}
       <section className="max-w-7xl mx-auto px-4 py-8" data-testid="live-below-feed">
         <div className="border-b-2 border-brand-red pb-2 mb-6">
           <h2 className="font-serif-editorial font-black text-2xl">{T.latestNewsFeed}</h2>
-          <p className="text-xs text-[#475569] mt-1">ప్రతి 60 సెకన్లకు ఆటో-అప్‌డేట్</p>
+          <p className="text-xs text-[#475569] mt-1">Auto-updates every 60s</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {news.slice(0, 12).map((n, i) => (
-            <NewsCard key={n.id} item={n} testId={`live-feed-card-${i}`} categoryLabel={catName(n.category)} />
+            <NewsCard key={n.id} item={n} testId={`live-feed-card-${i}`} categoryLabel={catLabel(n.category)} />
           ))}
         </div>
       </section>
