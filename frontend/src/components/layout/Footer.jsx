@@ -3,10 +3,13 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { T } from "@/lib/i18n";
 import { Phone, Mail, MapPin } from "lucide-react";
+import { useTheme } from "@/contexts/ThemeContext";
+import SocialLinks from "@/components/social/SocialLinks";
 
 export default function Footer() {
   const [cats, setCats] = useState([]);
   const [contact, setContact] = useState(null);
+  const { theme } = useTheme();
 
   useEffect(() => {
     (async () => {
@@ -26,8 +29,8 @@ export default function Footer() {
     <footer data-testid="site-footer" className="mt-16 bg-brand-blue-dark text-white">
       <div className="max-w-7xl mx-auto px-4 py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
         <div>
-          <img src="/logo.png" alt="News 9 Today" className="h-16 w-auto mb-3 bg-white p-2 inline-block" />
-          <p className="text-sm text-slate-300 leading-relaxed mb-4">{T.footerTagline}</p>
+          <img src={theme.logo_url || "/logo.png"} alt={theme.site_name_en || "News 9 Today"} className="h-16 w-auto mb-3 bg-white p-2 inline-block" />
+          <p className="text-sm text-slate-300 leading-relaxed mb-4">{theme.tagline_te || T.footerTagline}</p>
           {contact && (
             <div className="space-y-2 text-sm">
               <a href={`tel:${contact.phone}`} className="flex items-center gap-2 hover:text-brand-red transition-colors">
@@ -43,6 +46,9 @@ export default function Footer() {
               )}
             </div>
           )}
+          <div className="mt-4">
+            <SocialLinks />
+          </div>
         </div>
         <div>
           <div className="cat-tag text-brand-red mb-3">{T.sections}</div>

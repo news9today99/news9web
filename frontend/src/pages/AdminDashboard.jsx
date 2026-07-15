@@ -13,13 +13,23 @@ import YoutubeTab from "@/components/admin/YoutubeTab";
 import AdsTab from "@/components/admin/AdsTab";
 import PagesTab from "@/components/admin/PagesTab";
 import ContactTab from "@/components/admin/ContactTab";
+import ThemeTab from "@/components/admin/ThemeTab";
+import FlashConfigTab from "@/components/admin/FlashConfigTab";
 
 const EMPTY = {
   title: "", summary: "", body: "", category: "",
   image_url: "", images: [], youtube_url: "",
   is_featured: false, is_flash: false, is_published: true, tags: "",
-  body_font: "",
+  body_font: "", region: "national",
 };
+
+const REGION_OPTIONS = [
+  { slug: "national", name_te: "జాతీయ" },
+  { slug: "telangana", name_te: "తెలంగాణ" },
+  { slug: "andhra_pradesh", name_te: "ఆంధ్ర ప్రదేశ్" },
+  { slug: "karnataka", name_te: "కర్ణాటక" },
+  { slug: "tamil_nadu", name_te: "తమిళనాడు" },
+];
 
 export default function AdminDashboard() {
   const { user, loading: authLoading, logout } = useAuth();
@@ -61,6 +71,7 @@ export default function AdminDashboard() {
       youtube_url: item.youtube_url || "", is_featured: item.is_featured,
       is_flash: item.is_flash || false, is_published: item.is_published,
       tags: (item.tags || []).join(", "), body_font: item.body_font || "",
+      region: item.region || "national",
     });
     setShowForm(true);
   };
@@ -126,6 +137,8 @@ export default function AdminDashboard() {
     { k: "ads", label: T.ads },
     { k: "livetv", label: T.liveTvSettings },
     { k: "youtube", label: T.youtubeSync },
+    { k: "flash", label: "బ్రేకింగ్ న్యూస్" },
+    { k: "theme", label: "థీమ్" },
     { k: "pages", label: T.pages },
     { k: "contact", label: T.contactSettings },
   ];
@@ -161,6 +174,8 @@ export default function AdminDashboard() {
       {tab === "ads" && <AdsTab />}
       {tab === "livetv" && <LiveTVTab />}
       {tab === "youtube" && <YoutubeTab cats={cats} />}
+      {tab === "flash" && <FlashConfigTab cats={cats} />}
+      {tab === "theme" && <ThemeTab />}
       {tab === "pages" && <PagesTab />}
       {tab === "contact" && <ContactTab />}
 
@@ -191,10 +206,17 @@ export default function AdminDashboard() {
                   </select>
                 </div>
                 <div>
-                  <label className="cat-tag block mb-1">{T.tags}</label>
-                  <input value={form.tags} onChange={e => setForm({...form, tags: e.target.value})}
-                    data-testid="form-tags" className="w-full px-3 py-2 border border-[#E2E8F0] focus:outline-none focus:border-brand-red"/>
+                  <label className="cat-tag block mb-1">ప్రాంతం</label>
+                  <select value={form.region} onChange={e => setForm({...form, region: e.target.value})}
+                    data-testid="form-region" className="w-full px-3 py-2 border border-[#E2E8F0] bg-white">
+                    {REGION_OPTIONS.map(r => <option key={r.slug} value={r.slug}>{r.name_te}</option>)}
+                  </select>
                 </div>
+              </div>
+              <div>
+                <label className="cat-tag block mb-1">{T.tags}</label>
+                <input value={form.tags} onChange={e => setForm({...form, tags: e.target.value})}
+                  data-testid="form-tags" className="w-full px-3 py-2 border border-[#E2E8F0] focus:outline-none focus:border-brand-red"/>
               </div>
               <div>
                 <label className="cat-tag block mb-1">{T.bodyFont}</label>

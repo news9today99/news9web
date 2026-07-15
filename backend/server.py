@@ -87,7 +87,8 @@ class NewsCreate(BaseModel):
     is_flash: bool = False
     is_published: bool = True
     tags: List[str] = []
-    body_font: Optional[str] = None  # NEW: telugu font family
+    body_font: Optional[str] = None
+    region: Optional[str] = "national"  # national | andhra_pradesh | telangana | karnataka | tamil_nadu
 
 class NewsUpdate(BaseModel):
     title: Optional[str] = None
@@ -102,6 +103,7 @@ class NewsUpdate(BaseModel):
     is_published: Optional[bool] = None
     tags: Optional[List[str]] = None
     body_font: Optional[str] = None
+    region: Optional[str] = None
 
 class CategoryCreate(BaseModel):
     slug: str
@@ -124,6 +126,25 @@ class ContactUpdate(BaseModel):
     phone: str
     email: str
     address: Optional[str] = ""
+    twitter: Optional[str] = ""
+    instagram: Optional[str] = ""
+    facebook: Optional[str] = ""
+    whatsapp: Optional[str] = ""
+    youtube: Optional[str] = ""
+
+class ThemeUpdate(BaseModel):
+    primary_color: str = "#E11D2E"
+    secondary_color: str = "#1E4B9C"
+    accent_color: str = "#0F2A5C"
+    logo_url: str = "/logo.png"
+    tagline_te: str = "నమ్మకమైన తెలుగు వార్తలు · 24×7"
+    tagline_en: str = "Trusted Telugu News · 24×7"
+    site_name_te: str = "న్యూస్ 9 టుడే"
+    site_name_en: str = "News 9 Today"
+
+class FlashConfigUpdate(BaseModel):
+    category_slugs: List[str] = []  # empty = all categories
+    use_featured_only: bool = False
 
 class YoutubeUpdate(BaseModel):
     channel_id: str
@@ -259,17 +280,39 @@ async def delete_category(slug: str, user: dict = Depends(get_current_admin)):
 @api_router.get("/news")
 async def list_news(category: Optional[str] = None, featured: Optional[bool] = None,
                     flash: Optional[bool] = None, q: Optional[str] = None,
+                    region: Optional[str] = None, source: Optional[str] = None,
                     page: int = 1, limit: int = 12):
     query = {"is_published": True}
     if category: query["category"] = category
     if featured is not None: query["is_featured"] = featured
-    if flash is not None: query["is_flash"] = flash
+    if source: query["source"] = source
+    if region and region != "national" and region != "all":
+        # Include national + specific region
+        query["$or"] = [{"region": region}, {"region": "national"}, {"region": {"$exists": False}}]
+    if flash is not None:
+        # Apply flash filter with flash_config override
+        if flash is True:
+            fc = await db.settings.find_one({"key": "flash_config"})
+            cat_slugs = (fc or {}).get("category_slugs", [])
+            use_featured = (fc or {}).get("use_featured_only", False)
+            if use_featured:
+                query["is_featured"] = True
+            else:
+                query["is_flash"] = True
+            if cat_slugs:
+                query["category"] = {"$in": cat_slugs}
+        else:
+            query["is_flash"] = False
     if q:
-        query["$or"] = [
+        q_or = [
             {"title": {"$regex": q, "$options": "i"}},
             {"summary": {"$regex": q, "$options": "i"}},
             {"body": {"$regex": q, "$options": "i"}},
         ]
+        if "$or" in query:
+            query = {"$and": [{"$or": query.pop("$or")}, {"$or": q_or}], **query}
+        else:
+            query["$or"] = q_or
     total = await db.news.count_documents(query)
     skip = max(0, (page - 1) * limit)
     docs = await db.news.find(query).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
@@ -318,10 +361,30 @@ DEFAULT_SETTINGS = {
     "livetv": {"url": "https://www.youtube.com/embed/jfKfPfyJRdk", "stream_type": "youtube",
                "title_en": "News 9 Today", "title_te": "న్యూస్ 9 టుడే"},
     "contact": {"phone": "9393950505", "email": "news9today99@gmail.com",
-                "address": "Hyderabad, Telangana"},
+                "address": "Hyderabad, Telangana",
+                "twitter": "", "instagram": "", "facebook": "",
+                "whatsapp": "", "youtube": ""},
     "youtube": {"channel_id": "", "auto_import": True, "default_category": "videos"},
     "weather": {"city": "Hyderabad", "latitude": 17.385, "longitude": 78.4867},
+    "theme": {"primary_color": "#E11D2E", "secondary_color": "#1E4B9C",
+              "accent_color": "#0F2A5C", "logo_url": "/logo.png",
+              "tagline_te": "నమ్మకమైన తెలుగు వార్తలు · 24×7",
+              "tagline_en": "Trusted Telugu News · 24×7",
+              "site_name_te": "న్యూస్ 9 టుడే", "site_name_en": "News 9 Today"},
+    "flash_config": {"category_slugs": [], "use_featured_only": False},
 }
+
+REGIONS = [
+    {"slug": "national", "name_en": "National", "name_te": "జాతీయ", "bbox": None},
+    {"slug": "telangana", "name_en": "Telangana", "name_te": "తెలంగాణ",
+     "bbox": [15.83, 77.28, 19.92, 81.79]},
+    {"slug": "andhra_pradesh", "name_en": "Andhra Pradesh", "name_te": "ఆంధ్ర ప్రదేశ్",
+     "bbox": [12.62, 76.75, 19.13, 84.75]},
+    {"slug": "karnataka", "name_en": "Karnataka", "name_te": "కర్ణాటక",
+     "bbox": [11.6, 74.05, 18.45, 78.6]},
+    {"slug": "tamil_nadu", "name_en": "Tamil Nadu", "name_te": "తమిళనాడు",
+     "bbox": [8.08, 76.23, 13.35, 80.35]},
+]
 
 async def get_setting(key):
     doc = await db.settings.find_one({"key": key})
@@ -357,6 +420,37 @@ async def set_contact(payload: ContactUpdate, user: dict = Depends(get_current_a
 async def set_youtube(payload: YoutubeUpdate, user: dict = Depends(get_current_admin)):
     await set_setting("youtube", payload.model_dump())
     return await get_setting("youtube")
+
+# ---- Theme ----
+@api_router.get("/settings/theme")
+async def get_theme(): return await get_setting("theme")
+
+@api_router.put("/admin/settings/theme")
+async def set_theme(payload: ThemeUpdate, user: dict = Depends(get_current_admin)):
+    await set_setting("theme", payload.model_dump())
+    return await get_setting("theme")
+
+# ---- Flash config ----
+@api_router.get("/settings/flash-config")
+async def get_flash_cfg(): return await get_setting("flash_config")
+
+@api_router.put("/admin/settings/flash-config")
+async def set_flash_cfg(payload: FlashConfigUpdate, user: dict = Depends(get_current_admin)):
+    await set_setting("flash_config", payload.model_dump())
+    return await get_setting("flash_config")
+
+# ---- Regions ----
+@api_router.get("/regions")
+async def list_regions(): return REGIONS
+
+# ---- Reverse geo to region ----
+@api_router.get("/geo/detect-region")
+async def detect_region(lat: float, lon: float):
+    for r in REGIONS:
+        bb = r.get("bbox")
+        if bb and bb[0] <= lat <= bb[2] and bb[1] <= lon <= bb[3]:
+            return {"region": r["slug"], "name_te": r["name_te"], "name_en": r["name_en"]}
+    return {"region": "national", "name_te": "జాతీయ", "name_en": "National"}
 
 # ---- YouTube auto-import ----
 @api_router.post("/admin/youtube/sync")

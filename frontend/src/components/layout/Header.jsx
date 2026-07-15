@@ -4,6 +4,8 @@ import Marquee from "react-fast-marquee";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { T } from "@/lib/i18n";
+import { useTheme } from "@/contexts/ThemeContext";
+import SocialLinks from "@/components/social/SocialLinks";
 
 export default function Header({ flash = [] }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -11,6 +13,7 @@ export default function Header({ flash = [] }) {
   const [q, setQ] = useState("");
   const [cats, setCats] = useState([]);
   const [contact, setContact] = useState(null);
+  const { theme } = useTheme();
   const nav = useNavigate();
 
   useEffect(() => {
@@ -43,6 +46,7 @@ export default function Header({ flash = [] }) {
               <a href={`mailto:${contact.email}`} className="flex items-center gap-1 hover:text-brand-red transition-colors" data-testid="header-email">
                 <Mail className="w-3 h-3" /> {contact.email}
               </a>
+              <SocialLinks variant="header" />
             </div>
             <div className="flex items-center gap-4">
               <Link to="/privacy" className="hover:text-brand-red transition-colors">{T.privacy}</Link>
@@ -75,9 +79,9 @@ export default function Header({ flash = [] }) {
       <div className="bg-white border-b border-[#E2E8F0]">
         <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-3">
           <Link to="/" data-testid="site-logo" className="flex items-center gap-3">
-            <img src="/logo.png" alt="News 9 Today" className="h-14 md:h-16 w-auto" />
+            <img src={theme.logo_url || "/logo.png"} alt={theme.site_name_en || "News 9 Today"} className="h-14 md:h-16 w-auto" />
             <div className="hidden sm:block">
-              <div className="cat-tag text-brand-blue text-[0.65rem]">{T.siteTagline}</div>
+              <div className="cat-tag text-brand-blue text-[0.65rem]" data-testid="site-tagline">{theme.tagline_te || T.siteTagline}</div>
             </div>
           </Link>
           <div className="hidden md:flex items-center gap-3">

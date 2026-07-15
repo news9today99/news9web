@@ -6,6 +6,7 @@ import { Radio, TrendingUp } from "lucide-react";
 import LivePlayer from "@/components/livetv/LivePlayer";
 import AdSlot from "@/components/ads/AdSlot";
 import WeatherWidget from "@/components/widgets/WeatherWidget";
+import ShortsRail from "@/components/home/ShortsRail";
 import { T } from "@/lib/i18n";
 
 export default function Home() {
@@ -13,12 +14,26 @@ export default function Home() {
   const [cats, setCats] = useState([]);
   const [live, setLive] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [region, setRegion] = useState(null);
 
   useEffect(() => {
+    // Listen to region change from RegionBanner via storage
+    try {
+      const saved = localStorage.getItem("n9t_region");
+      if (saved) setRegion(JSON.parse(saved).region);
+    } catch (e) { /* ignore */ }
+    const handler = (e) => setRegion(e.detail);
+    window.addEventListener("n9t-region-change", handler);
+    return () => window.removeEventListener("n9t-region-change", handler);
+  }, []);
+
+  useEffect(() => {
+    setLoading(true);
     (async () => {
       try {
+        const url = region && region !== "national" ? `/news?region=${region}&limit=100` : "/news?limit=100";
         const [n, c, l] = await Promise.all([
-          api.get("/news?limit=100"),
+          api.get(url),
           api.get("/categories"),
           api.get("/settings/livetv"),
         ]);
@@ -28,7 +43,7 @@ export default function Home() {
       } catch (e) { console.error(e); }
       finally { setLoading(false); }
     })();
-  }, []);
+  }, [region]);
 
   const featured = news.filter(n => n.is_featured);
   const hero = featured[0] || news[0];
@@ -128,6 +143,9 @@ export default function Home() {
       {cats.filter(c => byCat(c.slug).length > 0).slice(0, 4).map(c => (
         <CategorySection key={c.slug} title={c.name_te} slug={c.slug} items={byCat(c.slug)} catLabel={c.name_te} />
       ))}
+
+      {/* YouTube Shorts rail */}
+      <ShortsRail />
 
       {videos.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 mt-12">
