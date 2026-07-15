@@ -32,7 +32,7 @@ export default function Home() {
 
   const featured = news.filter(n => n.is_featured);
   const hero = featured[0] || news[0];
-  const heroSide = featured.slice(1, 5);
+  const heroSide = (featured.slice(1, 3).length > 0 ? featured.slice(1, 3) : news.filter(n => n.id !== hero?.id).slice(0, 2));
   const byCat = (cat) => news.filter(n => n.category === cat).slice(0, 4);
   const videos = news.filter(n => n.youtube_url).slice(0, 4);
   const latest = news.slice(0, 8);
@@ -53,11 +53,11 @@ export default function Home() {
     <main data-testid="home-page">
       {/* Hero grid */}
       <section className="max-w-7xl mx-auto px-4 pt-6">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <div className="lg:col-span-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:h-[500px]">
+          <div className="lg:col-span-8 h-full">
             {hero && <NewsCard item={hero} variant="hero" testId="hero-story" categoryLabel={catName(hero.category)} />}
           </div>
-          <div className="lg:col-span-4 grid grid-cols-2 lg:grid-cols-1 gap-3">
+          <div className="lg:col-span-4 grid grid-cols-2 lg:grid-cols-1 gap-3 lg:auto-rows-fr min-h-0">
             {heroSide.map((n, i) => (
               <NewsCard key={n.id} item={n} testId={`hero-side-${i}`} categoryLabel={catName(n.category)} />
             ))}

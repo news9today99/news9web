@@ -1,0 +1,68 @@
+{
+  "summary": "Verified bug fix: 'gap below hero on homepage' is fully resolved. Measured hero grid on desktop 1920x900 — hero card bottom exactly aligned with side column bottom (0px diff). Gap from hero grid bottom to 'తాజా వార్తలు' section top is 48px (within acceptable ~50px range from mt-12 spacing). All iteration 2/3 regression features intact: Telugu nav, flash marquee, stock ticker, weather widget, live TV widget, footer with contact info, article page, category pages, /live page.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "bug_fix_verification": {
+    "target_bug": "Vertical gap below hero story on homepage before Latest News section",
+    "status": "FIXED - Verified visually and via precise DOM measurements",
+    "measurements_at_1920x900": {
+      "hero_grid_height_px": 500,
+      "hero_grid_classes": "grid grid-cols-1 lg:grid-cols-12 gap-4 lg:h-[500px]",
+      "hero_card_bottom_y": 755,
+      "side_col_bottom_y": 755,
+      "hero_card_vs_side_col_diff_px": 0,
+      "gap_hero_card_to_grid_bottom_px": 0,
+      "gap_side_col_to_grid_bottom_px": 0,
+      "gap_hero_grid_to_latest_heading_px": 48,
+      "gap_hero_grid_to_latest_section_px": 48,
+      "hero_side_count": 2,
+      "side0_height_px": 244,
+      "side1_height_px": 244,
+      "expected_side_height_px": 244,
+      "note": "500 - 12 (gap-3) = 488 / 2 = 244 — matches exactly"
+    },
+    "acceptance_criteria_met": {
+      "hero_and_side_bottoms_within_20px": true,
+      "latest_news_within_50px_of_hero_grid_bottom": true,
+      "hero_grid_exactly_500px_tall": true,
+      "two_side_cards_at_244px_each": true,
+      "no_gap_larger_than_60px": true
+    }
+  },
+  "regression_tests": {
+    "flash_marquee": "PASS - India Wins / Prabhas breaking headlines visible",
+    "stock_ticker_under_nav": "PASS - NIFTY 50, SENSEX, BANK NIFTY, USD/INR all showing values",
+    "telugu_nav_labels": "PASS - నోయిడాలో, గోప్యతా విధానం, నిబంధనలు render",
+    "live_tv_widget_home_sidebar": "PASS - data-testid=live-tv-widget present",
+    "weather_widget": "PASS - widget present",
+    "footer_contact": "PASS - 9393950505 and news9today99@gmail.com visible",
+    "latest_news_grid": "PASS - 8 latest cards rendered",
+    "category_page_sports": "PASS - h1 'క్రీడలు' renders, no errors, hero + list layout",
+    "article_page": "PASS - h1 Telugu title, article image, share buttons, related sidebar (bodyLen ~2012 chars)",
+    "live_page": "PASS - video/iframe player renders, 24 news items in side feed"
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Home.jsx and NewsCard.jsx fixes are clean and minimal. lg:h-[500px] + lg:h-full + lg:auto-rows-fr is the correct CSS-only approach.",
+    "heroSide fallback logic (featured.slice(1,3) with fallback to non-hero news) correctly guarantees exactly 2 side cards.",
+    "Consider adding data-testid='hero-grid' on the outer grid div for future testability of layout measurements.",
+    "document.title still shows generic 'Emergent | Fullstack App' — consider setting a Telugu-localized <title> on Home/Category/Article pages for SEO."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (frontend-only test)", "frontend": "100%"},
+  "test_credentials": "admin@news.com / admin123 (per /app/memory/test_credentials.md — not exercised this iteration; regression request was UI-only)",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Bug 'gap below hero' fully resolved at 1920x900. If user reports similar issue at other viewports, measure with page.evaluate on getBoundingClientRect. Note: /category/sports newsCards count via [data-testid^=cat-card-] returned 1 — testid convention on category pages may differ from home page. Not a bug (page renders), but tests should probe actual selectors before asserting counts.",
+  "rca_of_the_issue": {
+    "problem": "Hero left column had fixed h-[520px]; right side column height driven by its content — often shorter/taller than hero. This produced a visible vertical gap on the left below the hero (or unequal bottom edges), which looked like blank space before 'తాజా వార్తలు'.",
+    "fix_applied": "1) Outer hero grid: lg:h-[500px] locks both columns to same height. 2) Hero card variant: h-[420px] md:h-[520px] lg:h-full lets it fill the wrapper. 3) Right column: grid + lg:auto-rows-fr splits available height equally between the 2 side cards. 4) Default NewsCard: flex flex-col h-full with flex-shrink-0 image and flex-1 content so each cell fills its allocated row height cleanly. 5) heroSide capped at 2 items with a safe fallback.",
+    "verification": "getBoundingClientRect measurements show heroCard.bottom === sideCol.bottom === heroGrid.bottom (all 755px). Latest News section starts 48px below (from mt-12). Zero-pixel gap on left column."
+  }
+}

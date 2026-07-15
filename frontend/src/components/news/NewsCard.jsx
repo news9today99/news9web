@@ -14,7 +14,7 @@ export function NewsCard({ item, variant = "default", testId, categoryLabel }) {
       <Link
         to={`/article/${item.id}`}
         data-testid={testId}
-        className="news-card group block relative overflow-hidden bg-black h-[420px] md:h-[520px]"
+        className="news-card group block relative overflow-hidden bg-black h-[420px] md:h-[520px] lg:h-full"
       >
         <img src={img} alt={item.title} className="news-card-img absolute inset-0 w-full h-full object-cover opacity-90" />
         <div className="hero-overlay absolute inset-0" />
@@ -60,9 +60,9 @@ export function NewsCard({ item, variant = "default", testId, categoryLabel }) {
     <Link
       to={`/article/${item.id}`}
       data-testid={testId}
-      className="news-card group block bg-white border border-[#E2E8F0] overflow-hidden hover:border-[#DC2626] transition-colors"
+      className="news-card group flex flex-col h-full bg-white border border-[#E2E8F0] overflow-hidden hover:border-[#DC2626] transition-colors"
     >
-      <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
+      <div className="relative aspect-[16/10] overflow-hidden bg-slate-100 flex-shrink-0">
         <img src={img} alt={item.title} className="news-card-img w-full h-full object-cover" />
         <div className="absolute top-2 left-2 flex gap-2">
           <span className="cat-tag bg-[#DC2626] text-white px-2 py-1">{label}</span>
@@ -79,11 +79,11 @@ export function NewsCard({ item, variant = "default", testId, categoryLabel }) {
           </div>
         )}
       </div>
-      <div className="p-4">
+      <div className="p-4 flex-1 flex flex-col min-h-0">
         <h3 className="font-serif-editorial font-bold text-lg leading-snug mb-2 line-clamp-2 group-hover:text-[#DC2626] transition-colors">
           {item.title}
         </h3>
-        <p className="text-sm text-[#475569] line-clamp-2 mb-2">{item.summary}</p>
+        <p className="text-sm text-[#475569] line-clamp-2 mb-2 flex-1">{item.summary}</p>
         <div className="cat-tag text-[#475569]">{formatDate(item.created_at)} · {item.author}</div>
       </div>
     </Link>
