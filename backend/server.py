@@ -289,9 +289,11 @@ async def list_news(category: Optional[str] = None, featured: Optional[bool] = N
     if category: query["category"] = category
     if featured is not None: query["is_featured"] = featured
     if source: query["source"] = source
-    if region and region != "national" and region != "all":
-        # Include national + specific region
-        query["$or"] = [{"region": region}, {"region": "national"}, {"region": {"$exists": False}}]
+    if region and region != "all":
+        if region == "national":
+            query["$or"] = [{"region": "national"}, {"region": {"$exists": False}}]
+        else:
+            query["$or"] = [{"region": region}, {"region": "national"}, {"region": {"$exists": False}}]
     if flash is not None:
         # Apply flash filter with flash_config override
         if flash is True:
