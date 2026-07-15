@@ -1,55 +1,70 @@
-# ABN Andhra News Portal - PRD
+# News 9 Today Portal - PRD
 
 ## Problem Statement
-Build a news portal (ABN Andhra Jyothi-inspired) where admin uploads news from backend and public site displays them with video attachments, sports, cinema, photos categories. Telugu support required.
+Telugu news portal (News 9 Today) where admin uploads news; public site shows Sports, Cinema, Photos, Videos and other sections. Full Telugu UI, admin customization, YouTube auto-import, ads system, weather/stock widgets, region-based news.
 
 ## Architecture
-- **Backend**: FastAPI + Motor (async MongoDB), PyJWT, bcrypt, Emergent object storage, hls.js (frontend)
-- **Frontend**: React 19 + React Router 7 + Tailwind + Shadcn UI + react-fast-marquee + Sonner + DOMPurify
-- **DB Collections**: `users`, `news`, `files`, `categories`, `settings`
-- **Fonts**: Playfair Display + IBM Plex Sans + Noto Sans Telugu
-- **Design**: Editorial newspaper — red (#DC2626) + blue (#1E3A8A) + off-white paper
-
-## Implemented
-
-### Iteration 1 (2026-02-15)
-- JWT admin auth + bcrypt
-- News CRUD, categories, image upload (Emergent object storage)
-- Editorial homepage, article page, admin dashboard with 12 seeded articles
-- Test result: 15/15 passed
-
-### Iteration 2 (2026-02-15)
-- **Full Telugu UI**: All nav labels, buttons, form labels, dashboard, footer in Telugu (via lib/i18n.js)
-- **Admin category management**: Add/edit/delete categories with English + Telugu names + display order; blocked if articles exist
-- **Live TV admin control**: URL + stream type (YouTube / HLS / MP4) + channel titles; hls.js integrated for .m3u8 streams
-- **Flash news toggle**: Per-article `is_flash` flag controls what appears in the top marquee (admin picks)
-- **Search bar**: Header search icon + /search?q= page with full-text query across title/summary/body
-- **Category pagination**: 12/page with Previous/Next controls
-- **Rich-text editor**: Bold/Italic/Heading/Quote/List/Link/Undo/Redo (contenteditable + DOMPurify sanitization on render)
-- **Multi-image galleries**: Multiple images per article + lightbox viewer
-- **Social share buttons**: Twitter, Facebook, WhatsApp + native share + copy-link
-- Test result: 21/21 backend + all frontend flows passed
+- Backend: FastAPI + Motor (MongoDB), PyJWT, bcrypt, Emergent object storage, YouTube RSS, Open-Meteo, Yahoo Finance
+- Frontend: React 19 + React Router 7 + Tailwind + Shadcn + hls.js + DOMPurify + react-fast-marquee
+- DB: users, news, files, categories, settings, pages, ads
+- Fonts: Playfair Display + IBM Plex Sans + Noto Sans Telugu + 18 Google Fonts Telugu fonts
 
 ## Test Credentials
 Admin: `admin@news.com` / `admin123`
+Site: https://content-manager-163.preview.emergentagent.com
+Contact: 9393950505 / news9today99@gmail.com
+
+## Implemented (feature-complete through Feb 2026)
+
+### Core (Iterations 1-2)
+- JWT admin auth, news CRUD, categories, image upload via Emergent object storage
+- Editorial homepage, article detail, admin dashboard, 12 seeded articles
+- Full Telugu UI (i18n.js T.* dictionary), category management, live TV admin, flash news toggle
+- Search bar + pagination, rich-text editor, multi-image galleries, social share buttons
+
+### Rebrand + Advanced (Iteration 3)
+- Site rebranded to News 9 Today with real logo (/logo.png)
+- Colors: red #E11D2E + blue #1E4B9C (from logo)
+- YouTube channel auto-import via RSS feed (no API key)
+- Ads system: strip / sidebar / image / video placements + admin CRUD
+- Weather widget (Open-Meteo free API), Stock ticker (Yahoo Finance)
+- Privacy Policy + Terms editable pages, /live dedicated Live TV page
+- Contact settings, 19 Telugu font selector for article body
+
+### Admin Customization + Location (Iteration 4)
+- Theme admin: primary/secondary/accent color pickers, logo URL, site name & tagline editors
+- Social links: Twitter/Instagram/Facebook/WhatsApp/YouTube in Contact tab → shown in header strip + footer
+- Breaking news category picker: multi-select which categories drive the top marquee
+- Region-based news via geolocation: 5 regions (National + Telangana + AP + Karnataka + Tamil Nadu) with bbox detection + manual picker + localStorage
+- YouTube Shorts rail on homepage (9:16 vertical cards from YT-source items)
+- Article region field, region-filtered news feed
+
+## Test Results
+- Iteration 1: 15/15 passed
+- Iteration 2: 21/21 passed
+- Iteration 3: deferred (completed in iter 5)
+- Iteration 4: 22/22 fixed + 43/43 retest passed
+- Iteration 5: 104/105 passed → 1 fix applied
+- Iteration 6: 43/43 backend retest passed (100%)
 
 ## Backlog
 
 ### P1
-- Rich-text editor: add image insertion inline
-- Article view counts + author bio
-- Improved SEO (meta tags, OpenGraph) — currently minimal
-- Live TV: reset-to-default button + multi-channel picker
+- Image insertion inside rich-text editor
+- OpenGraph meta tags per article (share previews)
+- Multi-channel Live TV picker (list of channels admin can flip between)
+- View count UI badge on articles
 
 ### P2
-- Comments system (anonymous or Emergent Google Auth)
+- Comments (anonymous or via Emergent Google Auth)
 - Push notifications for breaking news
-- RSS feed
-- Newsletter backend (currently UI-only)
-- Multi-admin user management + roles
-- Automatic translation (English ↔ Telugu) via LLM
+- RSS feed generation
+- Working newsletter backend
+- LLM English↔Telugu translation (paste English → auto-Telugu via Emergent LLM key)
+- Auto-schedule YouTube sync (currently manual)
+- SEO sitemap.xml
 
-## Recent Notes
-- Existing 12 seed articles have plain-text bodies (pre-rich-editor). New articles use HTML.
-- Flash news marquee reads `is_flash=true` items; migrated 5 featured items to also be flash.
-- RTMP streams don't work directly in browsers — admin must convert to HLS (help text shown).
+### Nice-to-have
+- Editor's Pick carousel between hero and Latest News
+- Reading time estimate per article
+- Dark mode toggle
