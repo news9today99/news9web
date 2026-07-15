@@ -6,6 +6,7 @@ import { Share2, Clock, User, X } from "lucide-react";
 import DOMPurify from "dompurify";
 import { T } from "@/lib/i18n";
 import { toast } from "sonner";
+import { getFontClass } from "@/lib/fonts";
 
 export default function Article() {
   const { id } = useParams();
@@ -129,7 +130,7 @@ export default function Article() {
           )}
 
           <div
-            className="font-body text-lg leading-relaxed article-body"
+            className={`text-lg leading-relaxed article-body ${getFontClass(article.body_font)}`}
             data-testid="article-body"
             dangerouslySetInnerHTML={{ __html: cleanBody }}
           />

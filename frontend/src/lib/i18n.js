@@ -1,4 +1,3 @@
-// Telugu UI translations. All button/label text in the app uses these keys.
 export const T = {
   // Header
   home: "హోమ్",
@@ -7,20 +6,26 @@ export const T = {
   search: "వెతకండి",
   searchPlaceholder: "వార్తలు వెతకండి...",
   flashNews: "బ్రేకింగ్ న్యూస్",
-  editorialSince: "సంపాదకీయ · 2026 నుంచి",
+  breakingNews: "బ్రేకింగ్ న్యూస్",
+  siteTagline: "నమ్మకమైన తెలుగు వార్తలు · 24×7",
+  privacy: "గోప్యతా విధానం",
+  terms: "నిబంధనలు",
 
   // Home sections
   latestNews: "తాజా వార్తలు",
   trendingNow: "ట్రెండింగ్ ఇప్పుడు",
   onAir: "ప్రసారంలో",
   viewAll: "అన్నీ చూడండి →",
-  abnVideos: "ఏబీఎన్ వీడియోలు",
+  abnVideos: "న్యూస్ 9 వీడియోలు",
+  weather: "వాతావరణం",
+  stockMarket: "స్టాక్ మార్కెట్",
 
   // Article
   relatedStories: "సంబంధిత వార్తలు",
   share: "షేర్",
   articleNotFound: "వార్త దొరకలేదు",
   backToHome: "← హోమ్‌కి తిరిగి వెళ్ళండి",
+  views: "వ్యూస్",
 
   // Category page
   category: "విభాగం",
@@ -53,6 +58,10 @@ export const T = {
   articles: "వార్తలు",
   categories: "విభాగాలు",
   siteSettings: "సైట్ సెట్టింగ్‌లు",
+  ads: "ప్రకటనలు",
+  pages: "పేజీలు",
+  youtubeSync: "యూట్యూబ్ సింక్",
+  contactSettings: "కాంటాక్ట్ వివరాలు",
   title: "శీర్షిక",
   date: "తేదీ",
   status: "స్థితి",
@@ -70,6 +79,7 @@ export const T = {
   categoryRequired: "విభాగం *",
   tags: "ట్యాగ్‌లు (కామాతో వేరు చేయండి)",
   body: "వార్త వివరాలు * (తెలుగు అనుమతి)",
+  bodyFont: "తెలుగు ఫాంట్",
   coverImage: "కవర్ చిత్రం",
   additionalImages: "అదనపు చిత్రాలు (ఫోటో గ్యాలరీ)",
   pasteUrlOrUpload: "URL పేస్ట్ చేయండి లేదా అప్‌లోడ్ చేయండి…",
@@ -108,15 +118,48 @@ export const T = {
   saveSettings: "సెట్టింగ్‌లు సేవ్ చేయండి",
   playLive: "లైవ్ ప్లే చేయండి",
   liveTvHelp: "యూట్యూబ్: /embed/VIDEO_ID URL వాడండి. HLS: .m3u8 లింక్. RTMP నేరుగా వెబ్‌లో పని చేయదు — HLS గా మార్చాలి.",
+  latestNewsFeed: "తాజా వార్తల ఫీడ్",
+
+  // YouTube
+  channelId: "యూట్యూబ్ చానెల్ ID",
+  channelIdHelp: "మీ చానెల్ URL నుంచి channel ID కాపీ చేయండి (UC...తో మొదలవుతుంది)",
+  autoImport: "ఆటో ఇంపోర్ట్",
+  defaultCategory: "డిఫాల్ట్ విభాగం",
+  syncNow: "ఇప్పుడే సింక్ చేయండి",
+  syncing: "సింక్ అవుతోంది...",
+
+  // Ads
+  addAd: "ప్రకటన జోడించండి",
+  adName: "ప్రకటన పేరు",
+  placement: "స్థానం",
+  placementStrip: "టాప్ స్ట్రిప్",
+  placementImage: "సైడ్‌బార్ చిత్రం",
+  placementVideo: "వ్యాసంలో వీడియో",
+  placementSidebar: "సైడ్‌బార్",
+  linkUrl: "క్లిక్ లింక్ URL",
+  imageUrl: "చిత్రం URL",
+  videoUrl: "వీడియో URL",
+  active: "యాక్టివ్",
+
+  // Pages
+  privacyPolicy: "గోప్యతా విధానం",
+  termsConditions: "నిబంధనలు మరియు షరతులు",
+  editPrivacyPolicy: "గోప్యతా విధానం సవరించండి",
+  editTerms: "నిబంధనలు సవరించండి",
+
+  // Contact
+  phone: "ఫోన్",
+  address: "చిరునామా",
 
   // Footer
-  footerTagline: "నమ్మకమైన సంపాదకీయ కవరేజీ. బ్రేకింగ్ న్యూస్, లోతైన విశ్లేషణ, ముఖ్యమైన కథనాలు.",
+  footerTagline: "నమ్మకమైన తెలుగు వార్తలు. బ్రేకింగ్ న్యూస్, లోతైన విశ్లేషణ, ముఖ్యమైన కథనాలు.",
   sections: "విభాగాలు",
   more: "మరిన్ని",
   newsletter: "వార్తాలేఖ",
   newsletterDesc: "రోజువారీ ముఖ్య వార్తలు మీ ఇమెయిల్‌కి.",
   yourEmail: "మీ ఇమెయిల్",
   subscribe: "సబ్‌స్క్రయిబ్",
-  allRightsReserved: "© 2026 ఏబీఎన్ ఆంధ్ర న్యూస్. అన్ని హక్కులు రిజర్వ్ చేయబడ్డాయి.",
+  allRightsReserved: "© 2026 న్యూస్ 9 టుడే. అన్ని హక్కులు రిజర్వ్ చేయబడ్డాయి.",
   editorialTrusted: "సంపాదకీయ · స్వతంత్ర · నమ్మకమైన",
+  contactUs: "సంప్రదింపులు",
 };

@@ -11,13 +11,14 @@ import logging
 import bcrypt
 import jwt
 import requests
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional
 
 from fastapi import FastAPI, APIRouter, HTTPException, Request, Response, UploadFile, File, Depends
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, EmailStr
 
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
@@ -27,7 +28,6 @@ JWT_ALGORITHM = "HS256"
 STORAGE_URL = "https://integrations.emergentagent.com/objstore/api/v1/storage"
 EMERGENT_KEY = os.environ.get("EMERGENT_LLM_KEY")
 APP_NAME = os.environ.get("APP_NAME", "news-portal")
-
 _storage_key = None
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -39,16 +39,15 @@ def verify_password(p, h): return bcrypt.checkpw(p.encode(), h.encode())
 
 def create_access_token(user_id, email):
     payload = {"sub": user_id, "email": email,
-               "exp": datetime.now(timezone.utc) + timedelta(hours=12),
-               "type": "access"}
+               "exp": datetime.now(timezone.utc) + timedelta(hours=12), "type": "access"}
     return jwt.encode(payload, os.environ["JWT_SECRET"], algorithm=JWT_ALGORITHM)
 
 def init_storage():
     global _storage_key
     if _storage_key: return _storage_key
-    resp = requests.post(f"{STORAGE_URL}/init", json={"emergent_key": EMERGENT_KEY}, timeout=30)
-    resp.raise_for_status()
-    _storage_key = resp.json()["storage_key"]
+    r = requests.post(f"{STORAGE_URL}/init", json={"emergent_key": EMERGENT_KEY}, timeout=30)
+    r.raise_for_status()
+    _storage_key = r.json()["storage_key"]
     return _storage_key
 
 def put_object(path, data, ct):
@@ -61,8 +60,7 @@ def put_object(path, data, ct):
 
 def get_object(path):
     key = init_storage()
-    r = requests.get(f"{STORAGE_URL}/objects/{path}",
-                     headers={"X-Storage-Key": key}, timeout=60)
+    r = requests.get(f"{STORAGE_URL}/objects/{path}", headers={"X-Storage-Key": key}, timeout=60)
     r.raise_for_status()
     return r.content, r.headers.get("Content-Type", "application/octet-stream")
 
@@ -89,6 +87,7 @@ class NewsCreate(BaseModel):
     is_flash: bool = False
     is_published: bool = True
     tags: List[str] = []
+    body_font: Optional[str] = None  # NEW: telugu font family
 
 class NewsUpdate(BaseModel):
     title: Optional[str] = None
@@ -102,6 +101,7 @@ class NewsUpdate(BaseModel):
     is_flash: Optional[bool] = None
     is_published: Optional[bool] = None
     tags: Optional[List[str]] = None
+    body_font: Optional[str] = None
 
 class CategoryCreate(BaseModel):
     slug: str
@@ -116,9 +116,42 @@ class CategoryUpdate(BaseModel):
 
 class LiveTVUpdate(BaseModel):
     url: str
-    stream_type: str  # youtube | hls | mp4
-    title_en: Optional[str] = "Andhra News 24×7"
-    title_te: Optional[str] = "ఆంధ్ర న్యూస్ 24×7"
+    stream_type: str
+    title_en: Optional[str] = "News 9 Today"
+    title_te: Optional[str] = "న్యూస్ 9 టుడే"
+
+class ContactUpdate(BaseModel):
+    phone: str
+    email: str
+    address: Optional[str] = ""
+
+class YoutubeUpdate(BaseModel):
+    channel_id: str
+    auto_import: bool = True
+    default_category: str = "videos"
+
+class AdCreate(BaseModel):
+    name: str
+    placement: str  # strip | image | video | sidebar
+    image_url: Optional[str] = None
+    video_url: Optional[str] = None
+    link_url: Optional[str] = ""
+    is_active: bool = True
+    order: int = 100
+
+class AdUpdate(BaseModel):
+    name: Optional[str] = None
+    placement: Optional[str] = None
+    image_url: Optional[str] = None
+    video_url: Optional[str] = None
+    link_url: Optional[str] = None
+    is_active: Optional[bool] = None
+    order: Optional[int] = None
+
+class PageUpdate(BaseModel):
+    title_en: str
+    title_te: str
+    body: str
 
 # ---------- Auth Dep ----------
 async def get_current_admin(request: Request):
@@ -149,11 +182,18 @@ def news_out(d):
         "is_flash": d.get("is_flash", False),
         "is_published": d.get("is_published", True),
         "tags": d.get("tags", []),
-        "created_at": d["created_at"], "author": d.get("author", "ABN Desk"),
+        "created_at": d["created_at"], "author": d.get("author", "News 9 Today"),
+        "body_font": d.get("body_font"),
     }
 
 def cat_out(d):
     return {"slug": d["slug"], "name_en": d["name_en"], "name_te": d["name_te"], "order": d.get("order", 100)}
+
+def ad_out(d):
+    return {"id": d["id"], "name": d["name"], "placement": d["placement"],
+            "image_url": d.get("image_url"), "video_url": d.get("video_url"),
+            "link_url": d.get("link_url", ""), "is_active": d.get("is_active", True),
+            "order": d.get("order", 100)}
 
 # ---------- App ----------
 app = FastAPI()
@@ -182,13 +222,12 @@ async def logout(response: Response):
 async def me(user: dict = Depends(get_current_admin)):
     return {"id": user["id"], "email": user["email"], "name": user["name"], "role": user["role"]}
 
-# ---- Categories (public) ----
+# ---- Categories ----
 @api_router.get("/categories")
 async def list_categories():
     docs = await db.categories.find({}).sort("order", 1).to_list(200)
     return [cat_out(d) for d in docs]
 
-# ---- Categories (admin) ----
 @api_router.post("/admin/categories")
 async def create_category(payload: CategoryCreate, user: dict = Depends(get_current_admin)):
     slug = slugify(payload.slug)
@@ -205,8 +244,7 @@ async def update_category(slug: str, payload: CategoryUpdate, user: dict = Depen
     if not updates: raise HTTPException(400, "No fields")
     r = await db.categories.update_one({"slug": slug}, {"$set": updates})
     if r.matched_count == 0: raise HTTPException(404, "Not found")
-    doc = await db.categories.find_one({"slug": slug})
-    return cat_out(doc)
+    return cat_out(await db.categories.find_one({"slug": slug}))
 
 @api_router.delete("/admin/categories/{slug}")
 async def delete_category(slug: str, user: dict = Depends(get_current_admin)):
@@ -217,7 +255,7 @@ async def delete_category(slug: str, user: dict = Depends(get_current_admin)):
     if r.deleted_count == 0: raise HTTPException(404, "Not found")
     return {"success": True}
 
-# ---- News Public ----
+# ---- News ----
 @api_router.get("/news")
 async def list_news(category: Optional[str] = None, featured: Optional[bool] = None,
                     flash: Optional[bool] = None, q: Optional[str] = None,
@@ -242,15 +280,17 @@ async def list_news(category: Optional[str] = None, featured: Optional[bool] = N
 async def get_news(news_id: str):
     doc = await db.news.find_one({"id": news_id})
     if not doc: raise HTTPException(404, "News not found")
+    # Increment view count (fire-and-forget)
+    await db.news.update_one({"id": news_id}, {"$inc": {"views": 1}})
     return news_out(doc)
 
-# ---- News Admin ----
 @api_router.post("/admin/news")
 async def create_news(payload: NewsCreate, user: dict = Depends(get_current_admin)):
     doc = payload.model_dump()
     doc["id"] = str(uuid.uuid4())
     doc["author"] = user["name"]
     doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    doc["views"] = 0
     await db.news.insert_one(doc)
     return news_out(doc)
 
@@ -260,8 +300,7 @@ async def update_news(news_id: str, payload: NewsUpdate, user: dict = Depends(ge
     if not updates: raise HTTPException(400, "No fields")
     r = await db.news.update_one({"id": news_id}, {"$set": updates})
     if r.matched_count == 0: raise HTTPException(404, "Not found")
-    doc = await db.news.find_one({"id": news_id})
-    return news_out(doc)
+    return news_out(await db.news.find_one({"id": news_id}))
 
 @api_router.delete("/admin/news/{news_id}")
 async def delete_news(news_id: str, user: dict = Depends(get_current_admin)):
@@ -274,30 +313,240 @@ async def admin_list_news(user: dict = Depends(get_current_admin)):
     docs = await db.news.find({}).sort("created_at", -1).to_list(500)
     return [news_out(d) for d in docs]
 
-# ---- Settings (Live TV) ----
-DEFAULT_LIVETV = {
-    "key": "livetv",
-    "url": "https://www.youtube.com/embed/jfKfPfyJRdk",
-    "stream_type": "youtube",
-    "title_en": "Andhra News 24×7",
-    "title_te": "ఆంధ్ర న్యూస్ 24×7",
+# ---- Generic Settings ----
+DEFAULT_SETTINGS = {
+    "livetv": {"url": "https://www.youtube.com/embed/jfKfPfyJRdk", "stream_type": "youtube",
+               "title_en": "News 9 Today", "title_te": "న్యూస్ 9 టుడే"},
+    "contact": {"phone": "9393950505", "email": "news9today99@gmail.com",
+                "address": "Hyderabad, Telangana"},
+    "youtube": {"channel_id": "", "auto_import": True, "default_category": "videos"},
+    "weather": {"city": "Hyderabad", "latitude": 17.385, "longitude": 78.4867},
 }
 
-@api_router.get("/settings/livetv")
-async def get_livetv():
-    doc = await db.settings.find_one({"key": "livetv"})
+async def get_setting(key):
+    doc = await db.settings.find_one({"key": key})
     if not doc:
-        return {k: v for k, v in DEFAULT_LIVETV.items() if k != "key"}
-    return {"url": doc["url"], "stream_type": doc["stream_type"],
-            "title_en": doc.get("title_en", "Live TV"), "title_te": doc.get("title_te", "లైవ్ టీవీ")}
+        default = DEFAULT_SETTINGS.get(key, {})
+        return dict(default) if default else None
+    return {k: v for k, v in doc.items() if k not in ("_id", "key")}
+
+async def set_setting(key, data):
+    doc = dict(data); doc["key"] = key
+    await db.settings.update_one({"key": key}, {"$set": doc}, upsert=True)
+
+@api_router.get("/settings/livetv")
+async def get_livetv_setting(): return await get_setting("livetv")
+
+@api_router.get("/settings/contact")
+async def get_contact(): return await get_setting("contact")
+
+@api_router.get("/settings/youtube")
+async def get_youtube_setting(): return await get_setting("youtube")
 
 @api_router.put("/admin/settings/livetv")
 async def set_livetv(payload: LiveTVUpdate, user: dict = Depends(get_current_admin)):
+    await set_setting("livetv", payload.model_dump())
+    return await get_setting("livetv")
+
+@api_router.put("/admin/settings/contact")
+async def set_contact(payload: ContactUpdate, user: dict = Depends(get_current_admin)):
+    await set_setting("contact", payload.model_dump())
+    return await get_setting("contact")
+
+@api_router.put("/admin/settings/youtube")
+async def set_youtube(payload: YoutubeUpdate, user: dict = Depends(get_current_admin)):
+    await set_setting("youtube", payload.model_dump())
+    return await get_setting("youtube")
+
+# ---- YouTube auto-import ----
+@api_router.post("/admin/youtube/sync")
+async def youtube_sync(user: dict = Depends(get_current_admin)):
+    yt = await get_setting("youtube")
+    channel_id = yt.get("channel_id", "").strip() if yt else ""
+    if not channel_id:
+        raise HTTPException(400, "YouTube channel_id not configured")
+    default_cat = (yt or {}).get("default_category", "videos") or "videos"
+    try:
+        r = requests.get(f"https://www.youtube.com/feeds/videos.xml?channel_id={channel_id}", timeout=15)
+        r.raise_for_status()
+    except Exception as e:
+        raise HTTPException(502, f"Failed to fetch YouTube feed: {e}")
+
+    root = ET.fromstring(r.content)
+    ns = {"atom": "http://www.w3.org/2005/Atom", "media": "http://search.yahoo.com/mrss/", "yt": "http://www.youtube.com/xml/schemas/2015"}
+    imported = 0
+    skipped = 0
+    for entry in root.findall("atom:entry", ns):
+        vid_el = entry.find("yt:videoId", ns)
+        if vid_el is None: continue
+        video_id = vid_el.text
+        # dedupe
+        existing = await db.news.find_one({"youtube_video_id": video_id})
+        if existing:
+            skipped += 1
+            continue
+        title = (entry.find("atom:title", ns).text or "Untitled").strip()
+        published = entry.find("atom:published", ns).text
+        link_el = entry.find("atom:link", ns)
+        author_el = entry.find("atom:author/atom:name", ns)
+        author = author_el.text if author_el is not None else "News 9 Today"
+        group = entry.find("media:group", ns)
+        desc = ""
+        thumb = ""
+        if group is not None:
+            desc_el = group.find("media:description", ns)
+            if desc_el is not None: desc = (desc_el.text or "")[:2000]
+            thumb_el = group.find("media:thumbnail", ns)
+            if thumb_el is not None: thumb = thumb_el.get("url", "")
+
+        doc = {
+            "id": str(uuid.uuid4()),
+            "title": title,
+            "summary": desc[:280] if desc else "",
+            "body": f"<p>{desc}</p>" if desc else f"<p>Watch this video on our channel.</p>",
+            "category": default_cat,
+            "image_url": thumb,
+            "images": [],
+            "youtube_url": f"https://www.youtube.com/embed/{video_id}",
+            "youtube_video_id": video_id,
+            "is_featured": False,
+            "is_flash": False,
+            "is_published": True,
+            "tags": ["youtube", "auto-import"],
+            "author": author,
+            "created_at": published or datetime.now(timezone.utc).isoformat(),
+            "views": 0,
+            "source": "youtube",
+        }
+        await db.news.insert_one(doc)
+        imported += 1
+    return {"imported": imported, "skipped": skipped, "channel_id": channel_id}
+
+# ---- Ads ----
+@api_router.get("/ads")
+async def list_ads(placement: Optional[str] = None):
+    q = {"is_active": True}
+    if placement: q["placement"] = placement
+    docs = await db.ads.find(q).sort("order", 1).to_list(50)
+    return [ad_out(d) for d in docs]
+
+@api_router.get("/admin/ads")
+async def admin_list_ads(user: dict = Depends(get_current_admin)):
+    docs = await db.ads.find({}).sort("order", 1).to_list(100)
+    return [ad_out(d) for d in docs]
+
+@api_router.post("/admin/ads")
+async def create_ad(payload: AdCreate, user: dict = Depends(get_current_admin)):
     doc = payload.model_dump()
-    doc["key"] = "livetv"
-    await db.settings.update_one({"key": "livetv"}, {"$set": doc}, upsert=True)
-    return {"url": doc["url"], "stream_type": doc["stream_type"],
-            "title_en": doc["title_en"], "title_te": doc["title_te"]}
+    doc["id"] = str(uuid.uuid4())
+    doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    await db.ads.insert_one(doc)
+    return ad_out(doc)
+
+@api_router.put("/admin/ads/{ad_id}")
+async def update_ad(ad_id: str, payload: AdUpdate, user: dict = Depends(get_current_admin)):
+    updates = {k: v for k, v in payload.model_dump().items() if v is not None}
+    if not updates: raise HTTPException(400, "No fields")
+    r = await db.ads.update_one({"id": ad_id}, {"$set": updates})
+    if r.matched_count == 0: raise HTTPException(404, "Not found")
+    return ad_out(await db.ads.find_one({"id": ad_id}))
+
+@api_router.delete("/admin/ads/{ad_id}")
+async def delete_ad(ad_id: str, user: dict = Depends(get_current_admin)):
+    r = await db.ads.delete_one({"id": ad_id})
+    if r.deleted_count == 0: raise HTTPException(404, "Not found")
+    return {"success": True}
+
+# ---- Pages (Privacy/Terms) ----
+DEFAULT_PAGES = {
+    "privacy": {
+        "title_en": "Privacy Policy",
+        "title_te": "గోప్యతా విధానం",
+        "body": "<p>News 9 Today respects your privacy. This policy explains how we collect and use information.</p><h2>Information We Collect</h2><p>We may collect basic analytics like page views to improve your experience.</p><h2>Contact</h2><p>For privacy questions, email news9today99@gmail.com.</p>",
+    },
+    "terms": {
+        "title_en": "Terms & Conditions",
+        "title_te": "నిబంధనలు మరియు షరతులు",
+        "body": "<p>Welcome to News 9 Today. By using this website, you agree to these terms.</p><h2>Content</h2><p>All content is provided for informational purposes.</p><h2>Contact</h2><p>news9today99@gmail.com · 9393950505</p>",
+    },
+}
+
+@api_router.get("/pages/{slug}")
+async def get_page(slug: str):
+    doc = await db.pages.find_one({"slug": slug})
+    if doc:
+        return {"slug": slug, "title_en": doc["title_en"], "title_te": doc["title_te"],
+                "body": doc["body"], "updated_at": doc.get("updated_at")}
+    if slug in DEFAULT_PAGES:
+        return {"slug": slug, **DEFAULT_PAGES[slug], "updated_at": None}
+    raise HTTPException(404, "Page not found")
+
+@api_router.put("/admin/pages/{slug}")
+async def set_page(slug: str, payload: PageUpdate, user: dict = Depends(get_current_admin)):
+    doc = payload.model_dump()
+    doc["slug"] = slug
+    doc["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.pages.update_one({"slug": slug}, {"$set": doc}, upsert=True)
+    return {"slug": slug, **payload.model_dump(), "updated_at": doc["updated_at"]}
+
+# ---- Widgets: Weather + Stock ----
+@api_router.get("/widgets/weather")
+async def widget_weather():
+    s = await get_setting("weather") or DEFAULT_SETTINGS["weather"]
+    lat, lon = s["latitude"], s["longitude"]
+    city = s.get("city", "Hyderabad")
+    try:
+        r = requests.get("https://api.open-meteo.com/v1/forecast",
+                         params={"latitude": lat, "longitude": lon,
+                                 "current": "temperature_2m,weather_code,relative_humidity_2m",
+                                 "timezone": "Asia/Kolkata"},
+                         timeout=8)
+        data = r.json()
+        cur = data.get("current", {})
+        return {
+            "city": city,
+            "temp": cur.get("temperature_2m"),
+            "humidity": cur.get("relative_humidity_2m"),
+            "weather_code": cur.get("weather_code"),
+            "time": cur.get("time"),
+        }
+    except Exception as e:
+        return {"city": city, "temp": None, "error": str(e)}
+
+STOCK_SYMBOLS = [
+    ("^NSEI", "NIFTY 50"),
+    ("^BSESN", "SENSEX"),
+    ("^NSEBANK", "BANK NIFTY"),
+    ("INR=X", "USD/INR"),
+]
+
+@api_router.get("/widgets/stock")
+async def widget_stock():
+    results = []
+    for sym, label in STOCK_SYMBOLS:
+        try:
+            r = requests.get(f"https://query1.finance.yahoo.com/v8/finance/chart/{sym}",
+                             params={"interval": "1d", "range": "5d"},
+                             headers={"User-Agent": "Mozilla/5.0"},
+                             timeout=6)
+            data = r.json()
+            result = data.get("chart", {}).get("result", [{}])[0]
+            meta = result.get("meta", {})
+            price = meta.get("regularMarketPrice")
+            prev = meta.get("chartPreviousClose") or meta.get("previousClose")
+            change = None
+            change_pct = None
+            if price is not None and prev:
+                change = round(price - prev, 2)
+                change_pct = round((change / prev) * 100, 2)
+            results.append({
+                "symbol": sym, "label": label,
+                "price": round(price, 2) if price else None,
+                "change": change, "change_pct": change_pct,
+            })
+        except Exception as e:
+            results.append({"symbol": sym, "label": label, "price": None, "error": str(e)})
+    return {"items": results, "updated_at": datetime.now(timezone.utc).isoformat()}
 
 # ---- File Upload ----
 MIME_MAP = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png",
@@ -330,7 +579,7 @@ async def download_file(path: str):
 
 @api_router.get("/")
 async def root():
-    return {"message": "News Portal API"}
+    return {"message": "News 9 Today API"}
 
 app.include_router(api_router)
 
@@ -338,8 +587,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
     allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"], allow_headers=["*"],
 )
 
 # ---------- Seed ----------
@@ -354,89 +602,6 @@ DEFAULT_CATEGORIES = [
     {"slug": "videos", "name_en": "Videos", "name_te": "వీడియోలు", "order": 80},
 ]
 
-SAMPLE_NEWS = [
-    {"title": "India Wins Historic Test Series Against Australia in Sydney",
-     "summary": "In a nail-biting finish, the Indian cricket team clinched the Border-Gavaskar Trophy with a stunning victory at the SCG.",
-     "body": "<p>The Indian cricket team scripted history on Sunday by winning the Border-Gavaskar Trophy for the fourth consecutive time.</p><p>Chasing a modest target on the final day, the team put up a solid batting display led by their in-form captain.</p>",
-     "category": "sports",
-     "image_url": "https://images.pexels.com/photos/31723741/pexels-photo-31723741.jpeg",
-     "youtube_url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
-     "is_featured": True, "is_flash": True, "tags": ["cricket", "india"]},
-    {"title": "Prabhas' Next Pan-India Blockbuster Announced with Rs 500 Cr Budget",
-     "summary": "Rebel Star Prabhas teams up with a top director for a mythological action epic.",
-     "body": "<p>Tollywood superstar Prabhas has officially announced his next project. The film reportedly has a whopping budget of Rs 500 crore.</p>",
-     "category": "cinema",
-     "image_url": "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg",
-     "is_featured": True, "is_flash": True, "tags": ["prabhas"]},
-    {"title": "Andhra Pradesh CM Announces New Industrial Corridor",
-     "summary": "The state government unveils a Rs 2 lakh crore investment plan.",
-     "body": "<p>The Chief Minister of Andhra Pradesh today announced a landmark industrial corridor stretching from Visakhapatnam to Amaravati.</p>",
-     "category": "politics",
-     "image_url": "https://images.unsplash.com/photo-1771340592111-19ea0bcd77f3",
-     "is_featured": True, "is_flash": True, "tags": ["andhra"]},
-    {"title": "Sensex Crosses 90,000 Mark, Investors Gain Rs 6 Lakh Crore",
-     "summary": "Indian stock markets hit an all-time high on strong FII inflows.",
-     "body": "<p>The BSE Sensex crossed the historic 90,000 mark for the first time ever on Monday.</p>",
-     "category": "business",
-     "image_url": "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3",
-     "tags": ["sensex"]},
-    {"title": "ISRO Successfully Launches Chandrayaan-4 Mission",
-     "summary": "India's ambitious lunar sample return mission blasts off from Sriharikota.",
-     "body": "<p>ISRO successfully launched Chandrayaan-4 from Sriharikota. This mission aims to bring back lunar soil samples to Earth by 2027.</p>",
-     "category": "technology",
-     "image_url": "https://images.unsplash.com/photo-1541185933-ef5d8ed016c2",
-     "youtube_url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
-     "is_flash": True, "tags": ["isro"]},
-    {"title": "New AIIMS Facility Inaugurated in Guntur District",
-     "summary": "State-of-the-art medical facility serves over 2 crore people.",
-     "body": "<p>A brand new AIIMS hospital was inaugurated today in Guntur district.</p>",
-     "category": "health",
-     "image_url": "https://images.unsplash.com/photo-1587351021355-a479a299d2f9",
-     "tags": ["aiims"]},
-    {"title": "Watch: Stunning Aerial Views of Araku Valley During Monsoon",
-     "summary": "Drone footage captures the mesmerising beauty of Araku Valley.",
-     "body": "<p>This stunning drone footage takes viewers on an aerial journey through the coffee plantations of Araku Valley.</p>",
-     "category": "videos",
-     "image_url": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4",
-     "youtube_url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
-     "is_featured": True, "tags": ["araku"]},
-    {"title": "In Pictures: Grand Sankranti Celebrations Across Andhra Pradesh",
-     "summary": "A visual journey through the vibrant Sankranti festivities.",
-     "body": "<p>From colourful muggus at every doorstep to the thrilling rooster fights of Godavari districts, Sankranti in Andhra Pradesh is a feast for the eyes.</p>",
-     "category": "photos",
-     "image_url": "https://images.unsplash.com/photo-1610394663146-cb1eb63c93f0",
-     "images": ["https://images.unsplash.com/photo-1610394663146-cb1eb63c93f0",
-                "https://images.unsplash.com/photo-1541185933-ef5d8ed016c2",
-                "https://images.unsplash.com/photo-1506905925346-21bda4d32df4"],
-     "tags": ["sankranti"]},
-    {"title": "Hyderabad FC Signs Star Brazilian Striker for Record Fee",
-     "summary": "The ISL club breaks its transfer record.",
-     "body": "<p>Hyderabad FC has announced the signing of star Brazilian striker for a record transfer fee.</p>",
-     "category": "sports",
-     "image_url": "https://images.unsplash.com/photo-1543326727-cf6c39e8f84c",
-     "tags": ["football"]},
-    {"title": "SS Rajamouli's Next with Mahesh Babu Titled 'Globetrotter'",
-     "summary": "The RRR director confirms his next project is a globe-trotting adventure film.",
-     "body": "<p>Baahubali and RRR director SS Rajamouli today confirmed his next film with Superstar Mahesh Babu.</p>",
-     "category": "cinema",
-     "image_url": "https://images.unsplash.com/photo-1440404653325-ab127d49abc1",
-     "youtube_url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
-     "tags": ["rajamouli"]},
-    {"title": "AI Revolution: Indian Startups Raise Record $12 Billion in 2025",
-     "summary": "Homegrown AI companies attract unprecedented investment.",
-     "body": "<p>Indian AI startups collectively raised over $12 billion in 2025, a fivefold increase from the previous year.</p>",
-     "category": "technology",
-     "image_url": "https://images.unsplash.com/photo-1677442136019-21780ecad995",
-     "tags": ["ai"]},
-    {"title": "Live TV: 24×7 Breaking News Coverage",
-     "summary": "Watch our live news channel for real-time updates.",
-     "body": "<p>Stay tuned to our live news channel for continuous coverage of the day's most important stories.</p>",
-     "category": "videos",
-     "image_url": "https://images.unsplash.com/photo-1742805382149-3c2f0cd0f300",
-     "youtube_url": "https://www.youtube.com/embed/dQw4w9WgXcQ",
-     "tags": ["live"]},
-]
-
 async def seed_admin():
     email = os.environ.get("ADMIN_EMAIL", "admin@news.com").lower()
     pwd = os.environ.get("ADMIN_PASSWORD", "admin123")
@@ -445,39 +610,23 @@ async def seed_admin():
         await db.users.insert_one({"id": str(uuid.uuid4()), "email": email,
             "password_hash": hash_password(pwd), "name": "Admin",
             "role": "admin", "created_at": datetime.now(timezone.utc).isoformat()})
-        logger.info(f"Seeded admin: {email}")
     elif not verify_password(pwd, existing["password_hash"]):
-        await db.users.update_one({"email": email},
-            {"$set": {"password_hash": hash_password(pwd)}})
+        await db.users.update_one({"email": email}, {"$set": {"password_hash": hash_password(pwd)}})
 
 async def seed_categories():
     for cat in DEFAULT_CATEGORIES:
-        await db.categories.update_one({"slug": cat["slug"]},
-                                        {"$setOnInsert": cat}, upsert=True)
-    logger.info("Categories seeded")
+        await db.categories.update_one({"slug": cat["slug"]}, {"$setOnInsert": cat}, upsert=True)
 
-async def seed_news():
-    if await db.news.count_documents({}) > 0: return
-    now = datetime.now(timezone.utc)
-    for i, item in enumerate(SAMPLE_NEWS):
-        doc = dict(item)
-        doc["id"] = str(uuid.uuid4())
-        doc["author"] = "ABN Desk"
-        doc["is_published"] = True
-        doc["is_featured"] = doc.get("is_featured", False)
-        doc["is_flash"] = doc.get("is_flash", False)
-        doc["tags"] = doc.get("tags", [])
-        doc["summary"] = doc.get("summary", "")
-        doc["images"] = doc.get("images", [])
-        doc["youtube_url"] = doc.get("youtube_url")
-        doc["created_at"] = (now - timedelta(hours=i)).isoformat()
-        await db.news.insert_one(doc)
-    logger.info(f"Seeded {len(SAMPLE_NEWS)} news")
-
-async def seed_livetv():
-    if not await db.settings.find_one({"key": "livetv"}):
-        await db.settings.insert_one(dict(DEFAULT_LIVETV))
-        logger.info("Live TV settings seeded")
+async def seed_defaults():
+    for key, val in DEFAULT_SETTINGS.items():
+        if not await db.settings.find_one({"key": key}):
+            doc = dict(val); doc["key"] = key
+            await db.settings.insert_one(doc)
+    for slug, page in DEFAULT_PAGES.items():
+        if not await db.pages.find_one({"slug": slug}):
+            doc = dict(page); doc["slug"] = slug
+            doc["updated_at"] = datetime.now(timezone.utc).isoformat()
+            await db.pages.insert_one(doc)
 
 @app.on_event("startup")
 async def on_startup():
@@ -485,12 +634,14 @@ async def on_startup():
     await db.news.create_index("id", unique=True)
     await db.news.create_index("category")
     await db.news.create_index("created_at")
+    await db.news.create_index("youtube_video_id")
     await db.categories.create_index("slug", unique=True)
     await db.settings.create_index("key", unique=True)
+    await db.pages.create_index("slug", unique=True)
+    await db.ads.create_index("placement")
     await seed_admin()
     await seed_categories()
-    await seed_news()
-    await seed_livetv()
+    await seed_defaults()
     try:
         init_storage()
         logger.info("Storage initialized")

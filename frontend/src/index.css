@@ -1,17 +1,21 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=IBM+Plex+Sans:wght@400;500;600;700&family=Noto+Sans+Telugu:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=IBM+Plex+Sans:wght@400;500;600;700&family=Noto+Sans+Telugu:wght@400;500;700&family=Ramabhadra&family=Ramaraja&family=Peddana&family=Suranna&family=Suravaram&family=Timmana&family=NTR&family=Mallanna&family=Mandali&family=Dhurjati&family=Gurajada&family=Tenali+Ramakrishna&family=Lakki+Reddy&family=Gidugu&family=Anek+Telugu:wght@400;600&family=Hind+Guntur:wght@400;600&family=Ponnala&family=Sree+Krushnadevaraya&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --brand-red: #DC2626;
-  --brand-red-hover: #B91C1C;
-  --brand-blue: #1E3A8A;
-  --paper: #F8F9FA;
-  --ink: #0F172A;
+  /* Brand colors from News 9 Today logo */
+  --brand-red: #E11D2E;
+  --brand-red-hover: #C1121F;
+  --brand-blue: #1E4B9C;
+  --brand-blue-hover: #163B7E;
+  --brand-blue-dark: #0F2A5C;
+  --paper: #F5F7FB;
+  --ink: #0B1220;
   --ink-muted: #475569;
   --line: #E2E8F0;
+  --gold: #F4C430;
 }
 
 body {
@@ -23,35 +27,51 @@ body {
   color: var(--ink);
 }
 
-.font-serif-editorial {
-  font-family: 'Playfair Display', 'Noto Sans Telugu', serif;
-}
+.font-serif-editorial { font-family: 'Playfair Display', 'Noto Sans Telugu', serif; }
+.font-body { font-family: 'IBM Plex Sans', 'Noto Sans Telugu', sans-serif; }
 
-.font-body {
-  font-family: 'IBM Plex Sans', 'Noto Sans Telugu', sans-serif;
-}
+/* Telugu font utility classes */
+.font-te-ramabhadra { font-family: 'Ramabhadra', 'Noto Sans Telugu', sans-serif; }
+.font-te-ramaraja { font-family: 'Ramaraja', 'Noto Sans Telugu', sans-serif; }
+.font-te-peddana { font-family: 'Peddana', 'Noto Sans Telugu', sans-serif; }
+.font-te-suranna { font-family: 'Suranna', 'Noto Sans Telugu', sans-serif; }
+.font-te-suravaram { font-family: 'Suravaram', 'Noto Sans Telugu', sans-serif; }
+.font-te-timmana { font-family: 'Timmana', 'Noto Sans Telugu', sans-serif; }
+.font-te-ntr { font-family: 'NTR', 'Noto Sans Telugu', sans-serif; }
+.font-te-mallanna { font-family: 'Mallanna', 'Noto Sans Telugu', sans-serif; }
+.font-te-mandali { font-family: 'Mandali', 'Noto Sans Telugu', sans-serif; }
+.font-te-dhurjati { font-family: 'Dhurjati', 'Noto Sans Telugu', sans-serif; }
+.font-te-gurajada { font-family: 'Gurajada', 'Noto Sans Telugu', sans-serif; }
+.font-te-tenali { font-family: 'Tenali Ramakrishna', 'Noto Sans Telugu', sans-serif; }
+.font-te-lakki { font-family: 'Lakki Reddy', 'Noto Sans Telugu', sans-serif; }
+.font-te-gidugu { font-family: 'Gidugu', 'Noto Sans Telugu', sans-serif; }
+.font-te-anek { font-family: 'Anek Telugu', 'Noto Sans Telugu', sans-serif; }
+.font-te-hindguntur { font-family: 'Hind Guntur', 'Noto Sans Telugu', sans-serif; }
+.font-te-ponnala { font-family: 'Ponnala', 'Noto Sans Telugu', sans-serif; }
+.font-te-krushna { font-family: 'Sree Krushnadevaraya', 'Noto Sans Telugu', sans-serif; }
+.font-te-noto { font-family: 'Noto Sans Telugu', sans-serif; }
 
 @layer base {
   :root {
-    --background: 0 0% 98%;
-    --foreground: 222 47% 11%;
+    --background: 218 33% 97%;
+    --foreground: 220 43% 8%;
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 220 43% 8%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 0 72% 51%;
+    --popover-foreground: 220 43% 8%;
+    --primary: 353 78% 50%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 217 74% 36%;
+    --secondary-foreground: 0 0% 100%;
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
-    --destructive: 0 72% 51%;
+    --accent: 217 74% 36%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 353 78% 50%;
     --destructive-foreground: 0 0% 100%;
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 0 72% 51%;
+    --ring: 353 78% 50%;
     --radius: 0.125rem;
   }
 }
@@ -61,26 +81,20 @@ body {
   body { @apply bg-background text-foreground; }
 }
 
-/* Custom scrollbar */
+/* Scrollbar */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: #F1F5F9; }
 ::-webkit-scrollbar-thumb { background: #94A3B8; border-radius: 0; }
 ::-webkit-scrollbar-thumb:hover { background: #64748B; }
 
 /* News card hover */
-.news-card-img {
-  transition: transform 0.4s ease;
-}
-.news-card:hover .news-card-img {
-  transform: scale(1.05);
-}
+.news-card-img { transition: transform 0.4s ease; }
+.news-card:hover .news-card-img { transform: scale(1.05); }
 
-/* Gradient overlay for hero text */
 .hero-overlay {
-  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0) 100%);
+  background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0) 100%);
 }
 
-/* Category tag */
 .cat-tag {
   font-family: 'IBM Plex Sans', sans-serif;
   letter-spacing: 0.12em;
@@ -89,16 +103,41 @@ body {
   font-size: 0.7rem;
 }
 
-/* Article body (from RichTextEditor HTML) */
+/* Brand background swatches */
+.bg-brand-red { background-color: #E11D2E; }
+.bg-brand-blue { background-color: #1E4B9C; }
+.bg-brand-blue-dark { background-color: #0F2A5C; }
+.text-brand-red { color: #E11D2E; }
+.text-brand-blue { color: #1E4B9C; }
+.border-brand-red { border-color: #E11D2E; }
+.border-brand-blue { border-color: #1E4B9C; }
+.hover\:bg-brand-red:hover { background-color: #C1121F; }
+.hover\:bg-brand-blue:hover { background-color: #163B7E; }
+.hover\:text-brand-red:hover { color: #E11D2E; }
+.hover\:border-brand-red:hover { border-color: #E11D2E; }
+
+/* Diagonal brand strip */
+.brand-strip {
+  background: linear-gradient(105deg, #E11D2E 0%, #E11D2E 55%, #1E4B9C 55%, #1E4B9C 100%);
+}
+
+/* Article body */
 .article-body p { margin-bottom: 1rem; }
-.article-body h2 { font-family: 'Playfair Display', serif; font-weight: 800; font-size: 1.75rem; margin: 1.5rem 0 0.75rem; }
-.article-body h3 { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1.35rem; margin: 1.25rem 0 0.5rem; }
+.article-body h2 { font-family: 'Playfair Display', 'Noto Sans Telugu', serif; font-weight: 800; font-size: 1.75rem; margin: 1.5rem 0 0.75rem; }
+.article-body h3 { font-family: 'Playfair Display', 'Noto Sans Telugu', serif; font-weight: 700; font-size: 1.35rem; margin: 1.25rem 0 0.5rem; }
 .article-body ul, .article-body ol { padding-left: 1.5rem; margin-bottom: 1rem; list-style-type: disc; }
 .article-body ol { list-style-type: decimal; }
-.article-body blockquote { border-left: 4px solid #DC2626; padding-left: 1rem; margin: 1rem 0; font-style: italic; color: #475569; }
-.article-body a { color: #DC2626; text-decoration: underline; }
+.article-body blockquote { border-left: 4px solid #E11D2E; padding-left: 1rem; margin: 1rem 0; font-style: italic; color: #475569; }
+.article-body a { color: #E11D2E; text-decoration: underline; }
 .article-body strong { font-weight: 700; }
 
+/* Ticker slide */
+@keyframes stock-scroll {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+.stock-ticker-track { animation: stock-scroll 60s linear infinite; }
+
 @media (prefers-reduced-motion: reduce) {
-  .news-card-img { transition: none; }
+  .news-card-img, .stock-ticker-track { transition: none; animation: none; }
 }

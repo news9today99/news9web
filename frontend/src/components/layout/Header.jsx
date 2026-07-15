@@ -1,5 +1,5 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { Search, Radio, Menu, X } from "lucide-react";
+import { Search, Radio, Menu, X, Phone, Mail } from "lucide-react";
 import Marquee from "react-fast-marquee";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
@@ -10,13 +10,15 @@ export default function Header({ flash = [] }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [q, setQ] = useState("");
   const [cats, setCats] = useState([]);
+  const [contact, setContact] = useState(null);
   const nav = useNavigate();
 
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await api.get("/categories");
-        setCats(data);
+        const [c, ct] = await Promise.all([api.get("/categories"), api.get("/settings/contact")]);
+        setCats(c.data);
+        setContact(ct.data);
       } catch (e) { /* ignore */ }
     })();
   }, []);
@@ -25,16 +27,35 @@ export default function Header({ flash = [] }) {
     e.preventDefault();
     if (!q.trim()) return;
     nav(`/search?q=${encodeURIComponent(q.trim())}`);
-    setSearchOpen(false);
-    setMobileOpen(false);
+    setSearchOpen(false); setMobileOpen(false);
   };
 
   return (
     <header data-testid="site-header" className="w-full">
+      {/* Contact strip */}
+      {contact && (
+        <div className="bg-brand-blue-dark text-white text-xs hidden md:block">
+          <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-1">
+            <div className="flex items-center gap-4">
+              <a href={`tel:${contact.phone}`} className="flex items-center gap-1 hover:text-brand-red transition-colors" data-testid="header-phone">
+                <Phone className="w-3 h-3" /> {contact.phone}
+              </a>
+              <a href={`mailto:${contact.email}`} className="flex items-center gap-1 hover:text-brand-red transition-colors" data-testid="header-email">
+                <Mail className="w-3 h-3" /> {contact.email}
+              </a>
+            </div>
+            <div className="flex items-center gap-4">
+              <Link to="/privacy" className="hover:text-brand-red transition-colors">{T.privacy}</Link>
+              <Link to="/terms" className="hover:text-brand-red transition-colors">{T.terms}</Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Flash news marquee */}
-      <div className="bg-[#DC2626] text-white" data-testid="flash-news-bar">
+      <div className="bg-brand-red text-white" data-testid="flash-news-bar">
         <div className="max-w-7xl mx-auto flex items-center gap-3 px-4 py-2">
-          <span className="cat-tag bg-white text-[#DC2626] px-2 py-1 whitespace-nowrap">{T.flashNews}</span>
+          <span className="cat-tag bg-white text-brand-red px-2 py-1 whitespace-nowrap">{T.breakingNews}</span>
           <div className="flex-1 overflow-hidden">
             <Marquee pauseOnHover speed={45} gradient={false}>
               {flash.length ? flash.map((f) => (
@@ -43,7 +64,7 @@ export default function Header({ flash = [] }) {
                   {f.title}
                 </Link>
               )) : (
-                <span className="mx-8">ఏబీఎన్ ఆంధ్ర న్యూస్ పోర్టల్‌కు స్వాగతం — తాజా వార్తలు, లైవ్ అప్‌డేట్‌లు</span>
+                <span className="mx-8">న్యూస్ 9 టుడే — తెలుగు తాజా వార్తలు, లైవ్ అప్‌డేట్‌లు</span>
               )}
             </Marquee>
           </div>
@@ -52,33 +73,34 @@ export default function Header({ flash = [] }) {
 
       {/* Logo bar */}
       <div className="bg-white border-b border-[#E2E8F0]">
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between px-4 py-3">
           <Link to="/" data-testid="site-logo" className="flex items-center gap-3">
-            <div className="bg-[#DC2626] text-white font-serif-editorial font-black text-2xl px-3 py-1 tracking-tight">
-              ABN
-            </div>
-            <div>
-              <div className="font-serif-editorial font-black text-2xl text-[#0F172A] leading-none">ఆంధ్ర న్యూస్</div>
-              <div className="cat-tag text-[#475569] text-[0.65rem] mt-1">{T.editorialSince}</div>
+            <img src="/logo.png" alt="News 9 Today" className="h-14 md:h-16 w-auto" />
+            <div className="hidden sm:block">
+              <div className="cat-tag text-brand-blue text-[0.65rem]">{T.siteTagline}</div>
             </div>
           </Link>
           <div className="hidden md:flex items-center gap-3">
             <button
               data-testid="header-search-btn"
               onClick={() => setSearchOpen(!searchOpen)}
-              className="p-2 hover:text-[#DC2626] transition-colors"
+              className="p-2 hover:text-brand-red transition-colors"
               aria-label={T.search}
             >
               {searchOpen ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
             </button>
-            <div className="flex items-center gap-2 bg-[#DC2626] text-white px-3 py-2">
+            <Link
+              to="/live"
+              data-testid="header-live-tv-btn"
+              className="flex items-center gap-2 bg-brand-red hover:bg-brand-red text-white px-3 py-2 transition-colors"
+            >
               <Radio className="w-4 h-4 animate-pulse" />
               <span className="cat-tag">{T.liveTv}</span>
-            </div>
+            </Link>
             <Link
               to="/admin/login"
               data-testid="header-admin-link"
-              className="border border-[#1E3A8A] text-[#1E3A8A] px-4 py-2 cat-tag hover:bg-[#1E3A8A] hover:text-white transition-colors"
+              className="border border-brand-blue text-brand-blue px-4 py-2 cat-tag hover:bg-brand-blue hover:text-white transition-colors"
             >
               {T.admin}
             </Link>
@@ -102,10 +124,10 @@ export default function Header({ flash = [] }) {
                 onChange={(e) => setQ(e.target.value)}
                 placeholder={T.searchPlaceholder}
                 data-testid="search-input"
-                className="flex-1 px-3 py-2 border border-[#E2E8F0] focus:outline-none focus:border-[#DC2626]"
+                className="flex-1 px-3 py-2 border border-[#E2E8F0] focus:outline-none focus:border-brand-red"
               />
               <button type="submit" data-testid="search-submit"
-                className="bg-[#DC2626] hover:bg-[#B91C1C] transition-colors text-white px-4 py-2 cat-tag flex items-center gap-2">
+                className="bg-brand-red hover:bg-brand-red text-white px-4 py-2 cat-tag flex items-center gap-2 transition-colors">
                 <Search className="w-4 h-4" /> {T.search}
               </button>
             </form>
@@ -114,7 +136,7 @@ export default function Header({ flash = [] }) {
       </div>
 
       {/* Category nav */}
-      <nav className="bg-[#1E3A8A] text-white sticky top-0 z-40 shadow-sm" data-testid="category-nav">
+      <nav className="bg-brand-blue text-white sticky top-0 z-40 shadow-sm" data-testid="category-nav">
         <div className="max-w-7xl mx-auto px-4">
           <div className="hidden md:flex items-center gap-1 overflow-x-auto">
             <NavLink
@@ -122,7 +144,7 @@ export default function Header({ flash = [] }) {
               end
               data-testid="nav-home-link"
               className={({ isActive }) =>
-                `px-4 py-3 cat-tag whitespace-nowrap transition-colors ${isActive ? "bg-[#DC2626]" : "hover:bg-[#1e2a6a]"}`
+                `px-4 py-3 cat-tag whitespace-nowrap transition-colors ${isActive ? "bg-brand-red" : "hover:bg-brand-blue-dark"}`
               }
             >
               {T.home}
@@ -133,36 +155,33 @@ export default function Header({ flash = [] }) {
                 to={`/category/${c.slug}`}
                 data-testid={`nav-${c.slug}-link`}
                 className={({ isActive }) =>
-                  `px-4 py-3 cat-tag whitespace-nowrap transition-colors ${isActive ? "bg-[#DC2626]" : "hover:bg-[#1e2a6a]"}`
+                  `px-4 py-3 cat-tag whitespace-nowrap transition-colors ${isActive ? "bg-brand-red" : "hover:bg-brand-blue-dark"}`
                 }
               >
                 {c.name_te}
               </NavLink>
             ))}
+            <NavLink to="/live" data-testid="nav-live-link"
+              className={({ isActive }) =>
+                `px-4 py-3 cat-tag whitespace-nowrap transition-colors ml-auto ${isActive ? "bg-brand-red" : "hover:bg-brand-red bg-brand-blue-dark"}`}>
+              🔴 {T.liveTv}
+            </NavLink>
           </div>
           {mobileOpen && (
             <div className="md:hidden flex flex-col py-2" data-testid="mobile-nav">
               <form onSubmit={submitSearch} className="flex gap-2 px-4 py-2">
-                <input
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  placeholder={T.searchPlaceholder}
-                  className="flex-1 px-2 py-1 text-black text-sm"
-                />
-                <button type="submit" className="bg-[#DC2626] px-3 py-1 cat-tag text-xs"><Search className="w-4 h-4"/></button>
+                <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={T.searchPlaceholder}
+                  className="flex-1 px-2 py-1 text-black text-sm"/>
+                <button type="submit" className="bg-brand-red px-3 py-1 cat-tag text-xs"><Search className="w-4 h-4"/></button>
               </form>
               <NavLink to="/" end onClick={() => setMobileOpen(false)} className="px-4 py-2 cat-tag">{T.home}</NavLink>
+              <NavLink to="/live" onClick={() => setMobileOpen(false)} className="px-4 py-2 cat-tag bg-brand-red">🔴 {T.liveTv}</NavLink>
               {cats.map((c) => (
-                <NavLink
-                  key={c.slug}
-                  to={`/category/${c.slug}`}
-                  onClick={() => setMobileOpen(false)}
-                  className="px-4 py-2 cat-tag"
-                >
+                <NavLink key={c.slug} to={`/category/${c.slug}`} onClick={() => setMobileOpen(false)} className="px-4 py-2 cat-tag">
                   {c.name_te}
                 </NavLink>
               ))}
-              <Link to="/admin/login" onClick={() => setMobileOpen(false)} className="px-4 py-2 cat-tag bg-[#DC2626]">{T.admin}</Link>
+              <Link to="/admin/login" onClick={() => setMobileOpen(false)} className="px-4 py-2 cat-tag">{T.admin}</Link>
             </div>
           )}
         </div>

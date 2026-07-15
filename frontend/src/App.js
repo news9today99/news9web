@@ -9,8 +9,12 @@ import Home from "@/pages/Home";
 import Category from "@/pages/Category";
 import Article from "@/pages/Article";
 import Search from "@/pages/Search";
+import LivePage from "@/pages/LivePage";
+import StaticPage from "@/pages/StaticPage";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
+import AdSlot from "@/components/ads/AdSlot";
+import StockTicker from "@/components/widgets/StockTicker";
 import { api } from "@/lib/api";
 
 function ScrollToTop() {
@@ -30,8 +34,12 @@ function Layout({ children }) {
     })();
   }, []);
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8F9FA]">
+    <div className="min-h-screen flex flex-col bg-[#F5F7FB]">
+      {/* Top strip ad */}
+      <AdSlot placement="strip" testId="ad-strip-top" />
       <Header flash={flash} />
+      {/* Stock ticker below the nav bar */}
+      <StockTicker />
       <div className="flex-1">{children}</div>
       <Footer />
     </div>
@@ -51,6 +59,9 @@ function App() {
           <Route path="/category/:slug" element={<Layout><Category /></Layout>} />
           <Route path="/article/:id" element={<Layout><Article /></Layout>} />
           <Route path="/search" element={<Layout><Search /></Layout>} />
+          <Route path="/live" element={<Layout><LivePage /></Layout>} />
+          <Route path="/privacy" element={<Layout><StaticPage /></Layout>} />
+          <Route path="/terms" element={<Layout><StaticPage /></Layout>} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
