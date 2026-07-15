@@ -1,0 +1,28 @@
+{
+  "summary": "First-finish smoke pass for Andhra News (Telugu news portal). Backend: 6/6 critical endpoints working (news list, categories, login, /auth/me, admin news list, full CRUD with Telugu content). Frontend: 9/9 flows working (home layout, category nav, article detail, admin login with prefilled creds, admin dashboard listing 12 rows, create article with Telugu title/body, public visibility of new article on /category/sports, delete article, logout + redirect to /admin/login). End-to-end admin CRUD -> public visibility flow verified.",
+  "tested_scope": ["frontend", "backend", "auth", "integration"],
+  "passed": [
+    "GET /api/news returns 12 published articles",
+    "GET /api/categories returns 8 categories",
+    "POST /api/auth/login returns access_token + user; sets cookie",
+    "GET /api/auth/me protected endpoint works with Bearer token",
+    "POST /api/admin/news creates article with Telugu text (పరీక్ష వార్త) and persists correctly (UTF-8)",
+    "PUT /api/admin/news/{id} updates title",
+    "DELETE /api/admin/news/{id} removes article (subsequent GET returns 404)",
+    "Homepage renders: ABN logo, flash news marquee, blue category nav (Home/Politics/Sports/Cinema/Business/Technology/Health/Photos/Videos), hero + 34 article links",
+    "Category page /category/sports loads with 10 sports cards",
+    "Article detail /article/:id renders title (h1) correctly",
+    "Admin login form has prefilled admin@news.com / admin123; submit redirects to /admin",
+    "Admin dashboard shows all 12 rows with New Article + Logout buttons",
+    "New Article modal creates article with Telugu title 'పరీక్ష UI వార్త' and Telugu body; article appears in admin list",
+    "Newly created published article visible on public /category/sports page immediately",
+    "Delete action removes article from admin list",
+    "Logout clears session; visiting /admin redirects to /admin/login"
+  ],
+  "failed": [],
+  "action_items": [],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "retest_needed": false,
+  "full_testing_deferred": true,
+  "notes": "Image upload to Emergent object storage (POST /api/admin/upload) and edit-article flow were not exercised in this smoke pass; recommend covering in the full testing pass. All critical paths (admin CRUD -> public visibility, Telugu content, auth) verified working end-to-end."
+}

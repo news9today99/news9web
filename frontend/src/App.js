@@ -1,55 +1,57 @@
-import { useEffect } from "react";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
 import "@/App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
-import { HOME } from "@/constants/testIds";
+import { Toaster } from "sonner";
+import { AuthProvider } from "@/contexts/AuthContext";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
+import Home from "@/pages/Home";
+import Category from "@/pages/Category";
+import Article from "@/pages/Article";
+import AdminLogin from "@/pages/AdminLogin";
+import AdminDashboard from "@/pages/AdminDashboard";
+import { api } from "@/lib/api";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  return null;
+}
 
-const Home = () => {
-  const helloWorldApi = async () => {
-    try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
-    }
-  };
-
+function Layout({ children }) {
+  const [flash, setFlash] = useState([]);
   useEffect(() => {
-    helloWorldApi();
+    (async () => {
+      try {
+        const { data } = await api.get("/news?featured=true&limit=5");
+        setFlash(data);
+      } catch (e) { /* ignore */ }
+    })();
   }, []);
-
   return (
-    <div>
-      <header className="App-header">
-        <a
-          data-testid={HOME.emergentLink}
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
+    <div className="min-h-screen flex flex-col bg-[#F8F9FA]">
+      <Header flash={flash} />
+      <div className="flex-1">{children}</div>
+      <Footer />
     </div>
   );
-};
+}
 
 function App() {
   return (
-    <div className="App">
+    <AuthProvider>
       <BrowserRouter>
+        <ScrollToTop />
+        <Toaster position="top-right" richColors />
         <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
+          <Route path="/admin/login" element={<Layout><AdminLogin /></Layout>} />
+          <Route path="/admin" element={<Layout><AdminDashboard /></Layout>} />
+          <Route path="/" element={<Layout><Home /></Layout>} />
+          <Route path="/category/:slug" element={<Layout><Category /></Layout>} />
+          <Route path="/article/:id" element={<Layout><Article /></Layout>} />
         </Routes>
       </BrowserRouter>
-    </div>
+    </AuthProvider>
   );
 }
 
