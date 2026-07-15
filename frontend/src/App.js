@@ -8,6 +8,7 @@ import Footer from "@/components/layout/Footer";
 import Home from "@/pages/Home";
 import Category from "@/pages/Category";
 import Article from "@/pages/Article";
+import Search from "@/pages/Search";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/AdminDashboard";
 import { api } from "@/lib/api";
@@ -23,8 +24,8 @@ function Layout({ children }) {
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await api.get("/news?featured=true&limit=5");
-        setFlash(data);
+        const { data } = await api.get("/news?flash=true&limit=10");
+        setFlash(data.items || []);
       } catch (e) { /* ignore */ }
     })();
   }, []);
@@ -49,6 +50,7 @@ function App() {
           <Route path="/" element={<Layout><Home /></Layout>} />
           <Route path="/category/:slug" element={<Layout><Category /></Layout>} />
           <Route path="/article/:id" element={<Layout><Article /></Layout>} />
+          <Route path="/search" element={<Layout><Search /></Layout>} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

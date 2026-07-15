@@ -1,0 +1,66 @@
+{
+  "summary": "Iteration 2 full backend + frontend testing for ABN Andhra News. Backend: 21/21 pytest tests passed (auth, categories CRUD incl. duplicate/delete-with-articles error paths, news list/flash/search/pagination/category filters, admin news CRUD with flash+gallery, livetv GET/PUT youtube+mp4). Frontend: All Telugu labels verified in nav, admin dashboard, article form, category form, livetv form, footer. Search (Prabhas→1 result), Category page, Article page (share Twitter/Facebook/WhatsApp + copy link), Admin login, 3 admin tabs (వార్తలు/విభాగాలు/లైవ్ టీవీ సెట్టింగ్‌లు), article table with ⚡ FLASH badges (5 flash items visible), full article-create modal with rich-text editor (Bold/Italic/Heading/Quote/List/Link/Undo/Redo toolbar buttons all present), flash toggle, gallery upload button, submit → new article appears in admin list AND flash marquee. Category add ('వాతావరణం') → appears in public nav; delete no-article category succeeds; delete sports (has articles) blocked with 400 error. LiveTV url change to a different youtube embed reflected on homepage iframe; mp4 stream_type renders <video> element on homepage. End-to-end integration verified.",
+  "tested_scope": ["backend", "frontend", "auth", "integration", "telugu-ui"],
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Category page", "issues": ["On slow renders, h1 briefly shows raw slug ('sports') before cats API resolves and Telugu name (క్రీడలు) replaces it — cats and news are fetched in Promise.all but setData/setCats are separate React state updates, causing one intermediate render with cats=[]. Non-blocking cosmetic race. Suggest showing skeleton until both are ready or use a single setState."]}
+    ]
+  },
+  "passed": [
+    "Backend: GET /api/ health",
+    "Backend: POST /api/auth/login success + bad password (401) + /auth/me protected",
+    "Backend: GET /api/categories lists 8+ seeded cats with Telugu names",
+    "Backend: Categories CRUD (create/update/delete) with Bearer auth",
+    "Backend: POST duplicate category slug → 400",
+    "Backend: DELETE /api/admin/categories/sports (has articles) → 400 'Cannot delete: N articles...'",
+    "Backend: Unauthenticated admin/categories → 401",
+    "Backend: GET /api/news pagination shape {items,total,page,pages,limit}",
+    "Backend: GET /api/news?flash=true returns only is_flash=true items",
+    "Backend: GET /api/news?q=Prabhas returns matching item(s)",
+    "Backend: GET /api/news?page=2&limit=5 returns distinct items from page 1",
+    "Backend: GET /api/news?category=sports filters correctly",
+    "Backend: POST /api/admin/news with images[] + is_flash=true persists (verified via GET)",
+    "Backend: GET /api/settings/livetv returns current settings",
+    "Backend: PUT /api/admin/settings/livetv updates URL (youtube + mp4)",
+    "Frontend: Homepage Telugu nav labels — all 9 (హోమ్, రాజకీయాలు, క్రీడలు, సినిమా, వ్యాపారం, టెక్నాలజీ, ఆరోగ్యం, ఫోటోలు, వీడియోలు)",
+    "Frontend: Flash marquee shows బ్రేకింగ్ న్యూస్ label + featured story titles scrolling",
+    "Frontend: LIVE TV widget renders YouTube iframe on homepage",
+    "Frontend: Search — click header-search-btn → search-input appears → 'Prabhas' → /search?q=Prabhas → 1 result",
+    "Frontend: /category/sports loads with క్రీడలు heading + story count + hero + grid; pagination correctly hidden (only 3 items)",
+    "Frontend: Article page — category badge, title, share buttons (Twitter/Facebook/WhatsApp + copy-URL share-btn), related sidebar",
+    "Frontend: Admin login page shows 'అడ్మిన్ పోర్టల్' Telugu label, prefilled admin@news.com/admin123, submit → /admin",
+    "Frontend: Admin dashboard shows 3 tabs with Telugu: వార్తలు, విభాగాలు, లైవ్ టీవీ సెట్టింగ్‌లు; tab switching works",
+    "Frontend: Articles tab shows 14 rows with 5 ⚡ FLASH badges + Edit/Delete actions",
+    "Frontend: New Article modal — ALL data-testids present (form-title, form-summary, form-category, form-tags, form-body-editor, form-image-url, form-upload-btn, form-gallery-btn, form-gallery-file, form-youtube, form-featured, form-flash, form-published, form-submit)",
+    "Frontend: Rich text toolbar — Bold/Italic/Heading/Quote/List/Link/Undo/Redo all present",
+    "Frontend: Create Telugu article with is_flash=true → appears in admin list + flash marquee on homepage",
+    "Frontend: Categories tab shows 8 rows; ADD 'వాతావరణం' (weather####) → row count 8→9 → appears in public nav",
+    "Frontend: DELETE newly added category (no articles) → row count 9→8",
+    "Frontend: DELETE sports (has articles) → blocked (row count unchanged), backend returned 400",
+    "Frontend: LiveTV Save with new YouTube embed URL → homepage iframe src updates",
+    "Frontend: LiveTV stream_type=mp4 with .mp4 URL → homepage renders <video data-testid='live-tv-video'> element"
+  ],
+  "failed": [],
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Category.jsx: replace two-setState with a single batched setter (or React 18 automatic batching should apply — verify) to avoid intermediate render showing slug instead of Telugu name.",
+    "Console warning: React hydration warning 'In HTML, <span> cannot be a child of <option>' spotted on public pages — likely from the AdminDashboard <select> option children (<option>{c.name_te} ({c.name_en})</option>) or a similar spot. Text-only children should be fine; check if any component is inserting a span inside <option>. Non-blocking but should be cleaned up.",
+    "server.py DELETE /admin/settings/livetv is missing — only PUT exists. Not required by spec but consider adding a reset endpoint.",
+    "AdminDashboard.jsx is 543 lines with 3 subcomponents inline. Consider splitting CategoriesTab and LiveTVTab into separate files under /components/admin/. Non-blocking."
+  ],
+  "updated_files": ["/app/backend/tests/backend_test.py"],
+  "success_rate": {"backend": "100% (21/21)", "frontend": "100% of tested flows"},
+  "test_credentials": "admin@news.com / admin123 (seeded, verified)",
+  "seed_data_creation": "Test articles/categories created were cleaned up. LiveTV settings were briefly changed to test URLs then restored to default YouTube (https://www.youtube.com/embed/jfKfPfyJRdk, stream_type=youtube).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All 21 backend pytest cases passing. Frontend flows all verified. Only cosmetic race-condition on Category page h1 initial render (shows slug until cats load). Rich text editor uses contenteditable — for automation set innerHTML via page.evaluate on '[data-testid=\"form-body-editor-area\"]' and dispatch InputEvent. Gallery multi-upload requires real files; couldn't be automated via URL — backend gallery via images[] array works. Admin form testid button for login is 'admin-login-submit' (not 'admin-login-btn').",
+  "rca_of_the_issue": "N/A — no bugs found. Minor: Category.jsx h1 race on initial render — root cause: two consecutive setState calls (setData then setCats). React 18 auto-batches these so it should be a single render, but the observation indicates the render happened before setCats completed. Mitigation: combine into one setState({data, cats}) or gate h1 render on cats.length > 0."
+}

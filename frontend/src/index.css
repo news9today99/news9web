@@ -89,6 +89,16 @@ body {
   font-size: 0.7rem;
 }
 
+/* Article body (from RichTextEditor HTML) */
+.article-body p { margin-bottom: 1rem; }
+.article-body h2 { font-family: 'Playfair Display', serif; font-weight: 800; font-size: 1.75rem; margin: 1.5rem 0 0.75rem; }
+.article-body h3 { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1.35rem; margin: 1.25rem 0 0.5rem; }
+.article-body ul, .article-body ol { padding-left: 1.5rem; margin-bottom: 1rem; list-style-type: disc; }
+.article-body ol { list-style-type: decimal; }
+.article-body blockquote { border-left: 4px solid #DC2626; padding-left: 1rem; margin: 1rem 0; font-style: italic; color: #475569; }
+.article-body a { color: #DC2626; text-decoration: underline; }
+.article-body strong { font-weight: 700; }
+
 @media (prefers-reduced-motion: reduce) {
   .news-card-img { transition: none; }
 }

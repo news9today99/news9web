@@ -2,11 +2,12 @@ import { Link } from "react-router-dom";
 import { PlayCircle, Camera } from "lucide-react";
 import { resolveImageUrl, formatDate } from "@/lib/api";
 
-export function NewsCard({ item, variant = "default", testId }) {
+export function NewsCard({ item, variant = "default", testId, categoryLabel }) {
   const img = resolveImageUrl(item.image_url) ||
     "https://images.unsplash.com/photo-1495020689067-958852a7765e?w=800";
   const hasVideo = !!item.youtube_url;
-  const isPhoto = item.category === "photos";
+  const isPhoto = item.category === "photos" || (item.images && item.images.length > 1);
+  const label = (categoryLabel || item.category);
 
   if (variant === "hero") {
     return (
@@ -19,7 +20,7 @@ export function NewsCard({ item, variant = "default", testId }) {
         <div className="hero-overlay absolute inset-0" />
         <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8 text-white">
           <div className="flex items-center gap-2 mb-3">
-            <span className="cat-tag bg-[#DC2626] px-2 py-1">{item.category}</span>
+            <span className="cat-tag bg-[#DC2626] px-2 py-1">{label}</span>
             {hasVideo && <PlayCircle className="w-5 h-5" />}
           </div>
           <h2 className="font-serif-editorial font-black text-3xl md:text-4xl leading-tight mb-2 group-hover:text-[#FCA5A5] transition-colors">
@@ -46,7 +47,7 @@ export function NewsCard({ item, variant = "default", testId }) {
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="cat-tag text-[#DC2626] mb-1">{item.category}</div>
+          <div className="cat-tag text-[#DC2626] mb-1">{label}</div>
           <h3 className="font-serif-editorial font-bold text-base leading-snug line-clamp-2 group-hover:text-[#DC2626] transition-colors">
             {item.title}
           </h3>
@@ -64,7 +65,7 @@ export function NewsCard({ item, variant = "default", testId }) {
       <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
         <img src={img} alt={item.title} className="news-card-img w-full h-full object-cover" />
         <div className="absolute top-2 left-2 flex gap-2">
-          <span className="cat-tag bg-[#DC2626] text-white px-2 py-1">{item.category}</span>
+          <span className="cat-tag bg-[#DC2626] text-white px-2 py-1">{label}</span>
         </div>
         {hasVideo && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -74,7 +75,7 @@ export function NewsCard({ item, variant = "default", testId }) {
         {isPhoto && !hasVideo && (
           <div className="absolute bottom-2 right-2 bg-black/70 text-white px-2 py-1 flex items-center gap-1">
             <Camera className="w-3 h-3" />
-            <span className="cat-tag text-[0.6rem]">Gallery</span>
+            <span className="cat-tag text-[0.6rem]">{item.images?.length || "గ్యాలరీ"}</span>
           </div>
         )}
       </div>
