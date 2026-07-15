@@ -1,0 +1,128 @@
+{
+  "project_name": "Telugu Editorial News Portal",
+  "theme": "light",
+  "archetype": "SWISS & HIGH-CONTRAST (Editorial/Newspaper Variant)",
+  "typography": {
+    "fonts": {
+      "headings": "Playfair Display, serif",
+      "body": "IBM Plex Sans, sans-serif",
+      "telugu_support": "Noto Sans Telugu, sans-serif (ensure to include for Telugu character support)"
+    },
+    "hierarchy": {
+      "h1": "text-4xl md:text-5xl lg:text-6xl tracking-tight leading-tight font-black",
+      "h2": "text-2xl md:text-3xl lg:text-4xl tracking-tight leading-snug font-bold",
+      "h3": "text-xl md:text-2xl tracking-tight font-semibold",
+      "h4": "text-lg md:text-xl font-medium",
+      "body": "text-base md:text-lg leading-relaxed",
+      "small_labels": "text-xs md:text-sm uppercase tracking-[0.1em] font-semibold"
+    },
+    "rules": [
+      "DO NOT USE Inter. Use Playfair Display for dramatic news headlines.",
+      "Ensure body fonts support Telugu script beautifully (e.g., Noto Sans Telugu or standard system fallbacks).",
+      "Category tags over images must be uppercase, tiny, with wide letter spacing.",
+      "Articles need high legibility: loose line-height (leading-relaxed) and dark ink text."
+    ]
+  },
+  "colors": {
+    "palette": {
+      "primary": "#DC2626", 
+      "primary_hover": "#B91C1C",
+      "nav_bg": "#1E3A8A",
+      "nav_text": "#FFFFFF",
+      "background": "#F8F9FA",
+      "surface": "#FFFFFF",
+      "text_main": "#0F172A",
+      "text_muted": "#475569",
+      "border": "#E2E8F0",
+      "flash_news_bg": "#DC2626",
+      "flash_news_text": "#FFFFFF"
+    },
+    "rules": [
+      "No purple gradients or generic tech aesthetics.",
+      "Use Bold Red (#DC2626) exclusively for breaking news accents, active states, and primary CTAs.",
+      "Use Deep Blue (#1E3A8A) for the main navigation bar to mirror traditional Telugu news channels.",
+      "Use 'Off-white paper' background (#F8F9FA) rather than stark #FFFFFF for the main app background to reduce eye strain, placing white only on specific cards/surfaces."
+    ]
+  },
+  "visual_enhancers": {
+    "borders": "1px solid #E2E8F0. Use sharp corners (rounded-none or max rounded-sm) for an authoritative, newspaper-like feel.",
+    "shadows": "Minimalistic. Avoid soft fluffy shadows. Use flat, crisp structures or hard-edged shadows if necessary.",
+    "surfaces": "Solid colors. DO NOT use fully transparent backgrounds behind text. Headers must have a solid blue background. Cards must have solid white backgrounds.",
+    "dividers": "Use prominent horizontal and vertical lines (border-b, border-r) to separate news items, mimicking print newspaper columns."
+  },
+  "components_to_use": [
+    "Shadcn UI Buttons (Sharp corners, solid colors)",
+    "Shadcn UI Dialog (For video popups or modals)",
+    "Shadcn UI Forms/Inputs (For Admin Dashboard, sharp edges)",
+    "Shadcn UI Tabs (For switching between Latest/Trending in sidebars)",
+    "react-fast-marquee (For Flash News Ticker at the top of the site)",
+    "lucide-react (For standard UI icons like search, menu, share)",
+    "sonner (For admin toast notifications, customized to be sharp and functional)"
+  ],
+  "grids_and_layouts": {
+    "spacing_system": "Dense but structured. p-4 to p-6 inside cards. gap-4 to gap-6 between news blocks.",
+    "home_page": {
+      "flash_news": "Full width top bar (red background, white text) using react-fast-marquee.",
+      "header": "Sticky nav with solid blue background. Logo on left, English categories (Sports, Cinema, etc.) in center.",
+      "main_grid": "grid-cols-1 lg:grid-cols-12 gap-6 pt-6. Left side (col-span-8) for Bento grid of top stories (1 massive hero image, 4 smaller thumbnails). Right side (col-span-4) for Live TV widget and 'Latest Updates' scrolling list."
+    },
+    "category_page": {
+      "layout": "Grid of news cards. grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6. First card can span 2 columns as a featured story."
+    },
+    "article_detail": {
+      "layout": "max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 pt-6.",
+      "content": "col-span-1 lg:col-span-8. Huge H1, meta data (date/author), large hero image (max-h-[60vh] object-cover), optional embedded YouTube video, then body text.",
+      "sidebar": "col-span-1 lg:col-span-4. Related news and ad placeholders."
+    },
+    "admin_dashboard": {
+      "layout": "Sidebar navigation (dark blue or black) + Main content area.",
+      "style": "High-density grid. border-collapse for tables. No soft styles. Function over form.",
+      "forms": "Use Shadcn components. Fields for Title, Body (Telugu support), Category Dropdown, Image Upload (mock Emergent storage), YouTube URL, Publish Toggle."
+    }
+  },
+  "motion_and_interactions": {
+    "hover_states": "Images should have a subtle scale effect (hover:scale-105 duration-300) wrapped in overflow-hidden. Text links should underline or change to primary red.",
+    "flash_news": "Continuous smooth marquee. Pause on hover.",
+    "loading": "Use skeleton loaders matching the dense grid structure."
+  },
+  "accessibility_and_testing": {
+    "contrast": "Ensure text over images has a gradient overlay (bg-gradient-to-t from-black/80 to-transparent) on the lower half to keep headlines readable.",
+    "testing_attributes": "All interactive elements, buttons, and form inputs MUST have data-testid attributes (e.g., data-testid='nav-sports-link', data-testid='admin-login-button').",
+    "reduced_motion": "Respect prefers-reduced-motion for the marquee."
+  },
+  "image_urls": {
+    "sports": {
+      "url": "https://images.pexels.com/photos/31723741/pexels-photo-31723741.jpeg",
+      "description": "Cricket match action for Sports category hero"
+    },
+    "cinema": {
+      "url": "https://images.pexels.com/photos/7991579/pexels-photo-7991579.jpeg",
+      "description": "Movie theater scene for Cinema section"
+    },
+    "politics": {
+      "url": "https://images.unsplash.com/photo-1771340592111-19ea0bcd77f3",
+      "description": "Press conference podium for Politics/General News"
+    },
+    "live_tv": {
+      "url": "https://images.unsplash.com/photo-1742805382149-3c2f0cd0f300",
+      "description": "Breaking news studio set for Live TV widget placeholder"
+    }
+  },
+  "instructions_to_main_agent": [
+    "This is a .js project, do not output .tsx files. Use standard React .jsx/.js syntax.",
+    "Build the Admin Dashboard routing carefully to allow for content creation (mocked backend for Emergent object storage is fine, but visually functional).",
+    "Implement the specific Telugu editorial aesthetic: red and blue primary colors, sharp corners, dense grid layouts.",
+    "Include Playfair Display and IBM Plex Sans via Google Fonts in index.html or global css.",
+    "Ensure the hero images have appropriate text-shadow or gradient overlays if text is placed on top of them.",
+    "Implement react-fast-marquee for the breaking news section at the top.",
+    "Do not use generic 'Inter' font. It destroys the editorial newspaper feel."
+  ],
+  "universal_guidelines_for_main_agent": [
+    "Do not center-align paragraph text. Left-align for reading flow.",
+    "Do not apply 'transition: all'. Apply specific transitions like 'transition-colors' or 'transition-transform'.",
+    "No emojis as icons. Use lucide-react.",
+    "Always provide data-testid for key elements.",
+    "When building Shadcn components in .js, ensure prop types or default parameters handle missing props gracefully without TS.",
+    "Never use completely transparent backgrounds where content scrolls underneath (like sticky navs). Use solid or heavy blurred backgrounds."
+  ]
+}
