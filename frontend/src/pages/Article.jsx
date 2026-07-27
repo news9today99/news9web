@@ -26,7 +26,7 @@ export default function Article() {
           api.get("/categories"),
         ]);
         setArticle(a.data);
-        setCats(c.data);
+        setCats(Array.isArray(c.data) ? c.data : []);
         const rel = await api.get(`/news?category=${a.data.category}&limit=6`);
         setRelated((rel.data.items || []).filter(n => n.id !== id).slice(0, 4));
       } catch (e) {

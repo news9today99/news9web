@@ -28,7 +28,7 @@ export default function LivePage() {
           name_te: l.data.title_te, name_en: l.data.title_en,
         });
         setNews(n.data.items || []);
-        setCats(c.data);
+        setCats(Array.isArray(c.data) ? c.data : []);
       } finally { setLoading(false); }
     })();
     const int = setInterval(async () => {

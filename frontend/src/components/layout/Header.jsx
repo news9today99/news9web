@@ -22,7 +22,7 @@ export default function Header({ flash = [] }) {
     (async () => {
       try {
         const [c, ct] = await Promise.all([api.get("/categories"), api.get("/settings/contact")]);
-        setCats(c.data);
+        setCats(Array.isArray(c.data) ? c.data : (c.data?.items || []));
         setContact(ct.data);
       } catch (e) { /* ignore */ }
     })();
@@ -162,7 +162,7 @@ export default function Header({ flash = [] }) {
             >
               {T.home}
             </NavLink>
-            {cats.map((c) => (
+            {(Array.isArray(cats) ? cats : []).map((c) => (
               <NavLink
                 key={c.slug}
                 to={`/category/${c.slug}`}
@@ -189,7 +189,7 @@ export default function Header({ flash = [] }) {
               </form>
               <NavLink to="/" end onClick={() => setMobileOpen(false)} className="px-4 py-2 cat-tag">{T.home}</NavLink>
               <NavLink to="/live" onClick={() => setMobileOpen(false)} className="px-4 py-2 cat-tag bg-brand-red">🔴 {T.liveTv}</NavLink>
-              {cats.map((c) => (
+              {(Array.isArray(cats) ? cats : []).map((c) => (
                 <NavLink key={c.slug} to={`/category/${c.slug}`} onClick={() => setMobileOpen(false)} className="px-4 py-2 cat-tag">
                   {catName(c)}
                 </NavLink>

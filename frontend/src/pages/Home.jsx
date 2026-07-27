@@ -38,7 +38,7 @@ export default function Home() {
           api.get("/settings/livetv"),
         ]);
         setNews(n.data.items || []);
-        setCats(c.data);
+        setCats(Array.isArray(c.data) ? c.data : []);
         setLive(l.data);
       } catch (e) { console.error(e); }
       finally { setLoading(false); }

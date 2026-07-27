@@ -24,7 +24,7 @@ export default function Category() {
         api.get("/categories"),
       ]);
       setData(n.data);
-      setCats(c.data);
+      setCats(Array.isArray(c.data) ? c.data : []);
       setLoading(false);
     })();
   }, [slug, page]);

@@ -1,0 +1,44 @@
+{
+  "summary": "Iteration 7 (bug fix + new features). Backend: 14/14 pytest PASS (test_iteration7.py) covering theme.font_scale/default_language, LiveTV channels array with auto-UUID, view count increment, and regression on regions/categories/news/contact/weather/stock. Frontend: verified via Playwright — (1) 'm.map is not a function' TypeError GONE on /, /category/sports, /live, /article/{id}; (2) language-switcher with te/en/hi options; English mode nav shows HOME/TELANGANA/SPORTS/CINEMA... and footer contains '© 2026 News 9 Today'; Hindi mode nav shows होम / लाइव टीवी (only translated labels — categories fall back to Telugu name_te which is expected since no name_hi field exists in categories); (3) localStorage 'n9t_lang' persists across reload; (4) admin theme tab: theme-font_scale range + inc/dec + default_language select all present; setting 1.3 → html font-size = 20.8px (16 × 1.3 ✓); reset to 1.0 → 16px; (5) admin LiveTV tab: channel-new-name-te/name-en/url/type + channel-add-btn all present; added TEST channel, saved, backend accepted with auto-UUID; cleanup via channel-remove-{i} + save worked; (6) article-views testid renders 'N వ్యూస్' with Eye icon; view increment verified via backend test (views>=3 after 3 GETs).",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Hindi language mode", "issues": ["Category nav labels (SPORTS/CINEMA/etc.) fall back to Telugu name_te in Hindi mode because Category model has only name_en/name_te (no name_hi). Only static dict labels (होम/लाइव टीवी) translate. Not a bug — a design gap; consider adding name_hi to Category model if Hindi UX is priority."]}
+    ]
+  },
+  "verified_features": {
+    "bug_fix_m_map_TypeError": "GONE on /, /category/sports, /live, /article/{id}",
+    "language_switcher": "te/en/hi options work; localStorage n9t_lang persists across reload",
+    "english_nav_and_footer": "PASS — nav labels in English, footer has '© 2026 News 9 Today'",
+    "hindi_nav": "PARTIAL — static labels translate; category names remain Telugu (see design_issues)",
+    "font_scale_admin": "PASS — 1.3 → html font-size=20.8px; reset works",
+    "default_language_admin_select": "theme-default_language testid present",
+    "multi_channel_livetv": "PASS — add via channel-new-* + channel-add-btn, backend auto-assigns UUID, save persists; remove works",
+    "channel_picker_on_live": "Picker only renders when channels.length > 1 (LivePage.jsx:89). Verified render logic; with 1 active channel picker is hidden by design.",
+    "view_count_badge": "PASS — article-views testid renders count + Eye icon; backend view increment verified (views>=3)",
+    "backend_theme_font_scale": "PASS — GET/PUT /api/settings/theme includes font_scale + default_language",
+    "backend_livetv_channels": "PASS — PUT accepts channels: List[LiveChannel]; new channels auto-get UUID",
+    "regression": "PASS — /api/regions, /api/categories, /api/news, /api/settings/contact, /api/widgets/weather, /api/widgets/stock all 200"
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration7.py",
+    "/app/test_reports/pytest/iter7.xml"
+  ],
+  "action_items": [
+    "OPTIONAL: Add name_hi to Category model + seed Hindi category names so Hindi mode nav is fully localized.",
+    "OPTIONAL (UX): consider showing channel-picker even with 1 channel for consistency, or add a helper hint in admin that >=2 channels are needed for picker to appear."
+  ],
+  "critical_code_review_comments": [
+    "server.py now 786 lines — past the 700-line soft limit; splitting into routers (news, settings, admin, widgets, geo, pages) is recommended in a refactor iteration.",
+    "LivePage.jsx:89 hides picker when channels.length<=1 — spec assumed multi-channel; document this behavior in admin UI copy."
+  ],
+  "updated_files": ["/app/backend/tests/test_iteration7.py"],
+  "success_rate": { "backend": "100% (14/14 iter7 + prior 43/43 regression)", "frontend": "~95% (all critical flows pass; hindi category translation is a design gap not a bug)" },
+  "test_credentials": "admin@news.com / admin123 (from /app/memory/test_credentials.md — worked).",
+  "seed_data_creation": "Ephemeral: 1 test channel added via UI/API and cleaned up. 1 TEST article created for view-count and deleted. Theme font_scale/default_language snapshot-and-restored.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Bug fix + iter7 features validated. If picker=1-channel UX is changed, retest LivePage. Admin tabs are buttons with data-testid='tab-{k}' (not role=tab)."
+}

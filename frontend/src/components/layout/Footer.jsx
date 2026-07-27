@@ -15,15 +15,16 @@ export default function Footer() {
     (async () => {
       try {
         const [c, ct] = await Promise.all([api.get("/categories"), api.get("/settings/contact")]);
-        setCats(c.data);
+        setCats(Array.isArray(c.data) ? c.data : (c.data?.items || []));
         setContact(ct.data);
       } catch (e) { /* ignore */ }
     })();
   }, []);
 
-  const half = Math.ceil(cats.length / 2);
-  const left = cats.slice(0, half);
-  const right = cats.slice(half);
+  const catsArr = Array.isArray(cats) ? cats : [];
+  const half = Math.ceil(catsArr.length / 2);
+  const left = catsArr.slice(0, half);
+  const right = catsArr.slice(half);
 
   return (
     <footer data-testid="site-footer" className="mt-16 bg-brand-blue-dark text-white">
