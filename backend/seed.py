@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 News 9 Today – Full Database Seed Script
 =========================================

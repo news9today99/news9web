@@ -91,9 +91,22 @@ fi
 
 # ---------- 2. python deps ----------
 step "Checking Python dependencies"
-if ! python -c "import motor, bcrypt, dotenv" >/dev/null 2>&1; then
+# Detect Python binary (prefer python3, fall back to python)
+if command -v python3 >/dev/null 2>&1; then
+  PY_BIN="python3"
+  PIP_BIN="pip3"
+elif command -v python >/dev/null 2>&1; then
+  PY_BIN="python"
+  PIP_BIN="pip"
+else
+  fail "Neither python3 nor python found in PATH. Install Python 3.9+ and re-run."
+fi
+command -v "${PIP_BIN}" >/dev/null 2>&1 || PIP_BIN="${PY_BIN} -m pip"
+ok "Using ${PY_BIN}"
+
+if ! ${PY_BIN} -c "import motor, bcrypt, dotenv" >/dev/null 2>&1; then
   warn "installing backend requirements"
-  pip install -q -r "${BACKEND_DIR}/requirements.txt" || fail "pip install failed"
+  ${PIP_BIN} install -q -r "${BACKEND_DIR}/requirements.txt" || fail "pip install failed"
 fi
 ok "Python deps ready"
 
@@ -101,7 +114,7 @@ ok "Python deps ready"
 step "Seeding database"
 cd "${BACKEND_DIR}"
 # shellcheck disable=SC2086
-python seed.py ${SEED_FLAGS} || fail "seed.py failed"
+${PY_BIN} seed.py ${SEED_FLAGS} || fail "seed.py failed"
 
 # ---------- 4. frontend build ----------
 step "Building frontend"
