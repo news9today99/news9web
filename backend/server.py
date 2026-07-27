@@ -109,11 +109,13 @@ class CategoryCreate(BaseModel):
     slug: str
     name_en: str
     name_te: str
+    name_hi: Optional[str] = ""
     order: int = 100
 
 class CategoryUpdate(BaseModel):
     name_en: Optional[str] = None
     name_te: Optional[str] = None
+    name_hi: Optional[str] = None
     order: Optional[int] = None
 
 class ContactUpdate(BaseModel):
@@ -186,6 +188,20 @@ class PageUpdate(BaseModel):
     title_te: str
     body: str
 
+class FeedSourceCreate(BaseModel):
+    name: str
+    source_type: str  # facebook | twitter | instagram | youtube | rss
+    feed_url: str  # any RSS/Atom URL — for FB/Twitter/IG use RSSHub proxy (e.g. https://rsshub.app/facebook/page/USERNAME)
+    category: str = "videos"
+    is_active: bool = True
+
+class FeedSourceUpdate(BaseModel):
+    name: Optional[str] = None
+    source_type: Optional[str] = None
+    feed_url: Optional[str] = None
+    category: Optional[str] = None
+    is_active: Optional[bool] = None
+
 # ---------- Auth Dep ----------
 async def get_current_admin(request: Request):
     token = request.cookies.get("access_token")
@@ -223,7 +239,8 @@ def news_out(d):
     }
 
 def cat_out(d):
-    return {"slug": d["slug"], "name_en": d["name_en"], "name_te": d["name_te"], "order": d.get("order", 100)}
+    return {"slug": d["slug"], "name_en": d["name_en"], "name_te": d["name_te"],
+            "name_hi": d.get("name_hi", ""), "order": d.get("order", 100)}
 
 def ad_out(d):
     return {"id": d["id"], "name": d["name"], "placement": d["placement"],
@@ -440,6 +457,127 @@ async def set_livetv(payload: LiveTVUpdate, user: dict = Depends(get_current_adm
                 ch["id"] = str(uuid.uuid4())
     await set_setting("livetv", data)
     return await get_setting("livetv")
+
+# ---- Social/RSS Feed Sources ----
+def feed_out(d):
+    return {
+        "id": d["id"], "name": d["name"], "source_type": d["source_type"],
+        "feed_url": d["feed_url"], "category": d.get("category", "videos"),
+        "is_active": d.get("is_active", True),
+        "last_synced_at": d.get("last_synced_at"),
+        "last_sync_result": d.get("last_sync_result"),
+    }
+
+@api_router.get("/admin/feed-sources")
+async def list_feed_sources(user: dict = Depends(get_current_admin)):
+    docs = await db.feed_sources.find({}).sort("name", 1).to_list(100)
+    return [feed_out(d) for d in docs]
+
+@api_router.post("/admin/feed-sources")
+async def create_feed_source(payload: FeedSourceCreate, user: dict = Depends(get_current_admin)):
+    doc = payload.model_dump()
+    doc["id"] = str(uuid.uuid4())
+    doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    await db.feed_sources.insert_one(doc)
+    return feed_out(doc)
+
+@api_router.put("/admin/feed-sources/{fid}")
+async def update_feed_source(fid: str, payload: FeedSourceUpdate, user: dict = Depends(get_current_admin)):
+    updates = {k: v for k, v in payload.model_dump().items() if v is not None}
+    if not updates: raise HTTPException(400, "No fields")
+    r = await db.feed_sources.update_one({"id": fid}, {"$set": updates})
+    if r.matched_count == 0: raise HTTPException(404, "Not found")
+    return feed_out(await db.feed_sources.find_one({"id": fid}))
+
+@api_router.delete("/admin/feed-sources/{fid}")
+async def delete_feed_source(fid: str, user: dict = Depends(get_current_admin)):
+    r = await db.feed_sources.delete_one({"id": fid})
+    if r.deleted_count == 0: raise HTTPException(404, "Not found")
+    return {"success": True}
+
+def _extract_first_img(html_text: str) -> str:
+    m = re.search(r'<img[^>]+src="([^"]+)"', html_text or "")
+    return m.group(1) if m else ""
+
+async def _sync_feed(feed):
+    """Fetch feed_url as RSS/Atom, import new items as news."""
+    try:
+        resp = requests.get(feed["feed_url"], timeout=15,
+                            headers={"User-Agent": "Mozilla/5.0 (News9Today)"})
+        resp.raise_for_status()
+    except Exception as e:
+        return {"imported": 0, "skipped": 0, "error": str(e)}
+
+    root = ET.fromstring(resp.content)
+    tag = lambda t: t.split("}")[-1]
+    imported, skipped = 0, 0
+
+    # Support both RSS 2.0 <item> and Atom <entry>
+    items = root.findall(".//{*}item") + root.findall(".//{*}entry")
+    for entry in items[:20]:
+        title, link, desc, thumb, published = "", "", "", "", None
+        for child in entry:
+            t = tag(child.tag)
+            if t == "title": title = (child.text or "").strip()
+            elif t == "link":
+                link = child.get("href") or (child.text or "").strip()
+            elif t in ("description", "summary", "content"):
+                desc = (child.text or "")
+            elif t == "pubDate" or t == "published" or t == "updated":
+                published = (child.text or "").strip()
+            elif t == "thumbnail":
+                thumb = child.get("url", "") or thumb
+        if not title and not link: continue
+        ext_id = link or title
+        if await db.news.find_one({"external_id": ext_id}):
+            skipped += 1
+            continue
+        if not thumb: thumb = _extract_first_img(desc)
+        clean_desc = re.sub(r"<[^>]+>", "", desc or "")[:400]
+        doc = {
+            "id": str(uuid.uuid4()),
+            "title": title[:200] or "Untitled",
+            "summary": clean_desc[:280],
+            "body": f'<p>{clean_desc}</p><p><a href="{link}" target="_blank" rel="noopener">View original</a></p>',
+            "category": feed.get("category", "videos"),
+            "image_url": thumb,
+            "images": [],
+            "youtube_url": link if "youtube.com" in (link or "") else None,
+            "is_featured": False, "is_flash": False, "is_published": True,
+            "tags": [feed["source_type"], feed["name"].lower().replace(" ", "-")],
+            "author": feed["name"],
+            "region": "national",
+            "source": feed["source_type"],
+            "external_id": ext_id,
+            "external_url": link,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "views": 0,
+        }
+        await db.news.insert_one(doc)
+        imported += 1
+
+    await db.feed_sources.update_one(
+        {"id": feed["id"]},
+        {"$set": {"last_synced_at": datetime.now(timezone.utc).isoformat(),
+                  "last_sync_result": {"imported": imported, "skipped": skipped}}}
+    )
+    return {"imported": imported, "skipped": skipped}
+
+@api_router.post("/admin/feed-sources/{fid}/sync")
+async def sync_feed_source(fid: str, user: dict = Depends(get_current_admin)):
+    feed = await db.feed_sources.find_one({"id": fid})
+    if not feed: raise HTTPException(404, "Not found")
+    return await _sync_feed(feed)
+
+@api_router.post("/admin/feed-sources/sync-all")
+async def sync_all_feeds(user: dict = Depends(get_current_admin)):
+    feeds = await db.feed_sources.find({"is_active": True}).to_list(100)
+    results = []
+    for f in feeds:
+        r = await _sync_feed(f)
+        results.append({"id": f["id"], "name": f["name"], **r})
+    return {"total": len(feeds), "results": results}
+
 
 @api_router.put("/admin/settings/contact")
 async def set_contact(payload: ContactUpdate, user: dict = Depends(get_current_admin)):
@@ -724,14 +862,14 @@ app.add_middleware(
 
 # ---------- Seed ----------
 DEFAULT_CATEGORIES = [
-    {"slug": "politics", "name_en": "Politics", "name_te": "రాజకీయాలు", "order": 10},
-    {"slug": "sports", "name_en": "Sports", "name_te": "క్రీడలు", "order": 20},
-    {"slug": "cinema", "name_en": "Cinema", "name_te": "సినిమా", "order": 30},
-    {"slug": "business", "name_en": "Business", "name_te": "వ్యాపారం", "order": 40},
-    {"slug": "technology", "name_en": "Technology", "name_te": "టెక్నాలజీ", "order": 50},
-    {"slug": "health", "name_en": "Health", "name_te": "ఆరోగ్యం", "order": 60},
-    {"slug": "photos", "name_en": "Photos", "name_te": "ఫోటోలు", "order": 70},
-    {"slug": "videos", "name_en": "Videos", "name_te": "వీడియోలు", "order": 80},
+    {"slug": "politics", "name_en": "Politics", "name_te": "రాజకీయాలు", "name_hi": "राजनीति", "order": 10},
+    {"slug": "sports", "name_en": "Sports", "name_te": "క్రీడలు", "name_hi": "खेल", "order": 20},
+    {"slug": "cinema", "name_en": "Cinema", "name_te": "సినిమా", "name_hi": "सिनेमा", "order": 30},
+    {"slug": "business", "name_en": "Business", "name_te": "వ్యాపారం", "name_hi": "व्यापार", "order": 40},
+    {"slug": "technology", "name_en": "Technology", "name_te": "టెక్నాలజీ", "name_hi": "टेक्नोलॉजी", "order": 50},
+    {"slug": "health", "name_en": "Health", "name_te": "ఆరోగ్యం", "name_hi": "स्वास्थ्य", "order": 60},
+    {"slug": "photos", "name_en": "Photos", "name_te": "ఫోటోలు", "name_hi": "तस्वीरें", "order": 70},
+    {"slug": "videos", "name_en": "Videos", "name_te": "వీడియోలు", "name_hi": "वीडियो", "order": 80},
 ]
 
 async def seed_admin():
@@ -748,6 +886,12 @@ async def seed_admin():
 async def seed_categories():
     for cat in DEFAULT_CATEGORIES:
         await db.categories.update_one({"slug": cat["slug"]}, {"$setOnInsert": cat}, upsert=True)
+        # Backfill name_hi if missing on legacy docs
+        if cat.get("name_hi"):
+            await db.categories.update_one(
+                {"slug": cat["slug"], "$or": [{"name_hi": {"$exists": False}}, {"name_hi": ""}]},
+                {"$set": {"name_hi": cat["name_hi"]}}
+            )
 
 async def seed_defaults():
     for key, val in DEFAULT_SETTINGS.items():
@@ -767,6 +911,8 @@ async def on_startup():
     await db.news.create_index("category")
     await db.news.create_index("created_at")
     await db.news.create_index("youtube_video_id")
+    await db.news.create_index("external_id")
+    await db.feed_sources.create_index("id", unique=True)
     await db.categories.create_index("slug", unique=True)
     await db.settings.create_index("key", unique=True)
     await db.pages.create_index("slug", unique=True)

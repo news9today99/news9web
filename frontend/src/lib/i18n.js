@@ -31,6 +31,7 @@ export function catName(c) {
   if (!c) return "";
   const lang = state.lang;
   if (lang === "en") return c.name_en || c.name_te || c.slug;
+  if (lang === "hi") return c.name_hi || c.name_te || c.name_en || c.slug;
   return c.name_te || c.name_en || c.slug;
 }
 

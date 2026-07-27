@@ -6,7 +6,7 @@ import { T } from "@/lib/i18n";
 
 export default function CategoriesTab({ cats, onChanged }) {
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ slug: "", name_en: "", name_te: "", order: 100 });
+  const [form, setForm] = useState({ slug: "", name_en: "", name_te: "", name_hi: "", order: 100 });
   const [saving, setSaving] = useState(false);
 
   const reset = () => { setEditing(null); setForm({ slug: "", name_en: "", name_te: "", order: 100 }); };
@@ -87,6 +87,12 @@ export default function CategoriesTab({ cats, onChanged }) {
           <input required value={form.name_te} onChange={e => setForm({...form, name_te: e.target.value})}
             data-testid="cat-form-name-te"
             className="w-full px-3 py-2 border border-[#E2E8F0] focus:outline-none focus:border-brand-red font-serif-editorial"/>
+        </div>
+        <div>
+          <label className="cat-tag block mb-1">पेरु (हिंदी)</label>
+          <input value={form.name_hi || ""} onChange={e => setForm({...form, name_hi: e.target.value})}
+            data-testid="cat-form-name-hi"
+            className="w-full px-3 py-2 border border-[#E2E8F0] focus:outline-none focus:border-brand-red"/>
         </div>
         <div>
           <label className="cat-tag block mb-1">{T.order}</label>

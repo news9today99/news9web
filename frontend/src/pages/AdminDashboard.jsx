@@ -15,6 +15,7 @@ import PagesTab from "@/components/admin/PagesTab";
 import ContactTab from "@/components/admin/ContactTab";
 import ThemeTab from "@/components/admin/ThemeTab";
 import FlashConfigTab from "@/components/admin/FlashConfigTab";
+import FeedSourcesTab from "@/components/admin/FeedSourcesTab";
 
 const EMPTY = {
   title: "", summary: "", body: "", category: "",
@@ -137,6 +138,7 @@ export default function AdminDashboard() {
     { k: "ads", label: T.ads },
     { k: "livetv", label: T.liveTvSettings },
     { k: "youtube", label: T.youtubeSync },
+    { k: "feeds", label: "సోషల్ ఫీడ్‌లు" },
     { k: "flash", label: "బ్రేకింగ్ న్యూస్" },
     { k: "theme", label: "థీమ్" },
     { k: "pages", label: T.pages },
@@ -174,6 +176,7 @@ export default function AdminDashboard() {
       {tab === "ads" && <AdsTab />}
       {tab === "livetv" && <LiveTVTab />}
       {tab === "youtube" && <YoutubeTab cats={cats} />}
+      {tab === "feeds" && <FeedSourcesTab cats={cats} />}
       {tab === "flash" && <FlashConfigTab cats={cats} />}
       {tab === "theme" && <ThemeTab />}
       {tab === "pages" && <PagesTab />}

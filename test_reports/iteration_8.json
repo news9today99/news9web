@@ -1,0 +1,47 @@
+{
+  "summary": "Iteration 8 (name_hi + Social/RSS Feed Sources). Backend: 20/20 pytest PASS (test_iteration8.py). Verified: (a) GET /api/categories returns all 8 default categories each with correct name_hi (राजनीति/खेल/सिनेमा/व्यापार/टेक्नोलॉजी/स्वास्थ्य/तस्वीरें/वीडियो); (b) POST /api/admin/categories with name_hi persists and roundtrips; (c) Feed sources full CRUD — POST creates YouTube feed, GET lists, PUT deactivates, DELETE removes; (d) POST /sync imports N items on first call, then imported=0/skipped>=1 on second call (dedupe via external_id works); (e) /admin/feed-sources/sync-all skips inactive feeds; (f) Public /api/news?source=youtube returns imported items with source='youtube'; (g) last_synced_at + last_sync_result populated after sync. Frontend Playwright: (1) Hindi mode via language-switcher shows all 8 Hindi category labels in nav (होम/राजनीति/खेल/सिनेमा/व्यापार/टेक्नोलॉजी/स्वास्थ्य/तस्वीरें/वीडियो) — design gap from iter7 FIXED; (2) Admin login OK; tab-feeds present alongside 9 other tabs; (3) FeedSourcesTab renders — 5 source_type options with per-selection hints (Facebook→RSSHub, Twitter→Nitter, Instagram→RSSHub, YouTube→feeds.xml, RSS→generic); (4) Add form (feed-form-type/name/url/category/submit) creates feed → row visible with feed-row-0 + feed-sync-0/feed-active-0/feed-delete-0 buttons; sync, toggle, delete all work end-to-end; feed-sync-all present; (5) CategoriesTab has cat-form-name-hi field visible. FIXED critical typo in server.py:762 where `@api_router.get('/widgets/weather')` was on same line as comment causing /widgets/weather to return 404 — restored to a proper decorator; weather widget now returns 200 with live data.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "verified_features": {
+    "category_name_hi_seed_and_backfill": "PASS — all 8 default categories have correct name_hi; POST with name_hi roundtrips",
+    "feed_source_crud": "PASS — POST/GET/PUT/DELETE all 200",
+    "feed_sync_dedupe": "PASS — first sync imported>=1, second sync imported=0/skipped>=1 via external_id",
+    "feed_sync_all_skips_inactive": "PASS — deactivated feed excluded from sync-all results",
+    "public_news_filter_by_source": "PASS — /api/news?source=youtube returns imported items",
+    "frontend_hindi_nav": "PASS — all 8 Hindi category names render in nav (design gap from iter7 fully resolved)",
+    "frontend_feed_sources_tab": "PASS — form + list + all buttons work; per-type hints show",
+    "frontend_cat_form_name_hi": "PASS — cat-form-name-hi testid visible in CategoriesTab"
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration8.py",
+    "/app/test_reports/pytest/iter8.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "FIXED by testing agent: server.py had a critical typo on line 762 where the section comment and the @api_router.get('/widgets/weather') decorator were on the same line, making the endpoint unregistered (404). Restored to two lines. Weather widget now works. Main agent should review why iteration_7 report claimed this endpoint was OK.",
+    "server.py is now 931 lines — well past the 700-line soft limit. Recommend splitting into routers: auth, news, categories, settings, feeds, widgets, ads, pages, uploads.",
+    "Hydration warning in browser console: FeedSourcesTab has a <span> injected inside <option> in the category select — this is from the veditor tooling (x-source-* attrs) instrumentation and is harmless in production, but noisy in dev. No code change needed.",
+    "_sync_feed uses ET.fromstring on untrusted external XML — consider using defusedxml to prevent XML entity attacks (XXE, billion laughs). Low priority since sources are admin-added.",
+    "Test seeding: no cleanup path for news items imported by 'UI_TEST_FEED' if a UI-test crashes mid-run; consider tagging imported items with feed_id for reliable cleanup."
+  ],
+  "updated_files": [
+    "/app/backend/server.py (fixed /widgets/weather decorator typo on line 762)",
+    "/app/backend/tests/test_iteration8.py (new)"
+  ],
+  "success_rate": {
+    "backend": "100% (20/20 iter8 tests + weather regression fixed)",
+    "frontend": "100% (Hindi nav, feed sources CRUD/sync/toggle/delete, category name_hi form field all verified)"
+  },
+  "test_credentials": "admin@news.com / admin123 (from /app/memory/test_credentials.md — worked).",
+  "seed_data_creation": "Ephemeral only: 1 TEST-weather category (created and deleted), TEST_YT feed source (created, synced, deactivated, cleaned up via fixture teardown), UI_TEST_FEED via UI (added and deleted in the same session). YouTube channel UCBR8-60-B28hp2BmDPdntcQ (Google Developers) used as reliable RSS source; ~15 imported news items with source='youtube', author='TEST_YT' were removed by teardown. No residual test data.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All new iter8 features verified. If widget/weather endpoint breaks again, look at server.py near '# ---- Widgets: Weather + Stock ----' — decorator must be on its own line. Backend tests are pytest-based and use REACT_APP_BACKEND_URL from /app/frontend/.env. Admin tabs are buttons with data-testid=tab-{key}; feeds tab is tab-feeds. Feed rows are feed-row-{i} indexed. Hydration warnings from x-source-* attrs are dev-only tooling instrumentation, ignore."
+}
