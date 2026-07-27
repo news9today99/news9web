@@ -46,6 +46,15 @@ Contact: 9393950505 / news9today99@gmail.com
 - Iteration 4: 22/22 fixed + 43/43 retest passed
 - Iteration 5: 104/105 passed → 1 fix applied
 - Iteration 6: 43/43 backend retest passed (100%)
+- Iteration 7-8: backend 20/20, feed sources + Hindi labels verified
+
+## Recent Fixes (Feb 2026)
+- Fix: Local domain admin login was building `/admin/undefined/api/auth/login`
+  when `REACT_APP_BACKEND_URL` was missing at build time on self-hosted builds.
+  `frontend/src/lib/api.js` now safely falls back to a relative `/api` (same-origin
+  reverse-proxy deployments), while preview builds with the env var continue to
+  use the absolute URL. `resolveImageUrl` handles the same-origin case too.
+  Verified `POST /api/auth/login` returns 200 on preview after change.
 
 ## Backlog
 
