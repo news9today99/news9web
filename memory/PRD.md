@@ -55,6 +55,11 @@ Contact: 9393950505 / news9today99@gmail.com
   reverse-proxy deployments), while preview builds with the env var continue to
   use the absolute URL. `resolveImageUrl` handles the same-origin case too.
   Verified `POST /api/auth/login` returns 200 on preview after change.
+- Added `/app/backend/seed.py` — one-shot / idempotent seed for admin, categories,
+  settings (with `SITE_DOMAIN=https://news9today.com`), pages, and 12 sample
+  articles. Supports `--reset-admin`, `--wipe-news`, `--full-reset`.
+- Added `.env.example` templates for backend and frontend for reproducible
+  self-hosted setup.
 
 ## Backlog
 
