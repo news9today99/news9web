@@ -108,6 +108,23 @@ if ! ${PY_BIN} -c "import motor, bcrypt, dotenv" >/dev/null 2>&1; then
   warn "installing backend requirements"
   ${PIP_BIN} install -q -r "${BACKEND_DIR}/requirements.txt" || fail "pip install failed"
 fi
+
+# Fix Ubuntu system pyOpenSSL vs cryptography mismatch (breaks pymongo import).
+# The old apt package in /usr/lib/python3/dist-packages/OpenSSL crashes with
+# "module 'lib' has no attribute 'GEN_EMAIL'" against newer cryptography.
+if ! ${PY_BIN} -c "import pymongo" >/dev/null 2>&1; then
+  warn "pymongo import broken — upgrading pyOpenSSL + cryptography to fix system conflict"
+  ${PIP_BIN} install -q --upgrade "pyOpenSSL>=24.0.0" "cryptography>=42.0.8" || \
+    fail "pyOpenSSL upgrade failed — run: sudo apt remove python3-openssl && ${PIP_BIN} install pyOpenSSL cryptography"
+  # If system pyOpenSSL still shadows, prefer pip location by removing apt one
+  APT_OPENSSL_DIR="/usr/lib/python3/dist-packages/OpenSSL"
+  if [ -d "${APT_OPENSSL_DIR}" ] && ! ${PY_BIN} -c "import pymongo" >/dev/null 2>&1; then
+    warn "removing conflicting apt-installed OpenSSL package: ${APT_OPENSSL_DIR}"
+    sudo rm -rf "${APT_OPENSSL_DIR}" || rm -rf "${APT_OPENSSL_DIR}" || \
+      fail "could not remove ${APT_OPENSSL_DIR} — run: sudo apt remove --purge python3-openssl"
+  fi
+  ${PY_BIN} -c "import pymongo" >/dev/null 2>&1 || fail "pymongo still broken after fix"
+fi
 ok "Python deps ready"
 
 # ---------- 3. seed database ----------
