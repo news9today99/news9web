@@ -853,11 +853,27 @@ async def root():
 
 app.include_router(api_router)
 
+# CORS: always allow both www and non-www news9today.com origins for all APIs.
+# Any extra origins can be added via the CORS_ORIGINS env var (comma-separated).
+# We do NOT use "*" here because `withCredentials: true` in the frontend
+# requires a specific origin to be echoed back — browsers reject "*" + credentials.
+DEFAULT_ALLOWED_ORIGINS = [
+    "https://news9today.com",
+    "https://www.news9today.com",
+    "http://news9today.com",
+    "http://www.news9today.com",
+    "http://localhost:3000",
+]
+_extra = [o.strip() for o in os.environ.get("CORS_ORIGINS", "").split(",") if o.strip() and o.strip() != "*"]
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
-    allow_methods=["*"], allow_headers=["*"],
+    allow_origins=list(dict.fromkeys(DEFAULT_ALLOWED_ORIGINS + _extra)),
+    allow_origin_regex=r"^https?://(www\.)?news9today\.com$",
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # ---------- Seed ----------
