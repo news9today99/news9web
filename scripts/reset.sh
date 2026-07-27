@@ -55,7 +55,19 @@ if [ ! -f "${BACKEND_DIR}/.env" ]; then
     cp "${BACKEND_DIR}/.env.example" "${BACKEND_DIR}/.env"
     warn "backend/.env was missing — created from .env.example. EDIT IT before going live."
   else
-    fail "backend/.env and backend/.env.example both missing"
+    warn "backend/.env AND backend/.env.example missing — writing safe defaults inline"
+    cat > "${BACKEND_DIR}/.env" <<'EOF'
+MONGO_URL="mongodb://localhost:27017"
+DB_NAME="news9today"
+CORS_ORIGINS="*"
+JWT_SECRET="CHANGE_ME_TO_A_LONG_RANDOM_STRING"
+ADMIN_EMAIL="admin@news.com"
+ADMIN_PASSWORD="admin123"
+SITE_DOMAIN="https://news9today.com"
+EMERGENT_LLM_KEY=""
+APP_NAME="news9today"
+EOF
+    warn "backend/.env created with defaults — EDIT JWT_SECRET before going live"
   fi
 else
   ok "backend/.env exists"
@@ -66,7 +78,12 @@ if [ ! -f "${FRONTEND_DIR}/.env" ]; then
     cp "${FRONTEND_DIR}/.env.production.example" "${FRONTEND_DIR}/.env"
     warn "frontend/.env was missing — created from .env.production.example."
   else
-    warn "frontend/.env missing and no template found — api.js will fall back to relative /api"
+    warn "frontend/.env AND template missing — writing default for https://news9today.com"
+    cat > "${FRONTEND_DIR}/.env" <<'EOF'
+REACT_APP_BACKEND_URL=https://news9today.com
+WDS_SOCKET_PORT=443
+ENABLE_HEALTH_CHECK=false
+EOF
   fi
 else
   ok "frontend/.env exists"
