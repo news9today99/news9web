@@ -60,6 +60,13 @@ Contact: 9393950505 / news9today99@gmail.com
   articles. Supports `--reset-admin`, `--wipe-news`, `--full-reset`.
 - Added `.env.example` templates for backend and frontend for reproducible
   self-hosted setup.
+- Added `/app/install.sh` — one-shot Ubuntu 22.04/24.04 installer: system
+  packages (python3, node20, yarn, mongodb7, nginx, pm2, certbot), git clone,
+  env setup, DB seed, frontend build, nginx site + www→apex redirect,
+  Let's Encrypt SSL, PM2 startup persistence, and UFW firewall.
+- CORS hardened: server.py now allow-lists both `https://news9today.com` and
+  `https://www.news9today.com` (plus regex) instead of `"*"` — works with
+  `withCredentials: true`.
 
 ## Backlog
 
